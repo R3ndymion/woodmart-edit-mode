@@ -294,7 +294,80 @@ class WDEM_Plugin {
 			}
 		}
 
+		$data = array_merge( $data, $this->get_floating_blocks_data() );
+
 		return apply_filters( 'wdem_selectors', $data );
+	}
+
+	/**
+	 * Get the popups and floating blocks that this page printed.
+	 *
+	 * Both already carry their post ID in the markup, so no marker is needed. What the markup does
+	 * not say is which of them the page decided to print, and there is no hook around either
+	 * render. WoodMart works the list out from the display conditions it keeps in a transient, so
+	 * asking it the same question again is cheap — and a block that was not printed simply matches
+	 * nothing in the DOM.
+	 *
+	 * @return array
+	 */
+	private function get_floating_blocks_data() {
+		if ( ! class_exists( '\XTS\Modules\Floating_Blocks\Manager' ) ) {
+			return array();
+		}
+
+		// The theme prints neither while a builder post is being previewed on its own.
+		if ( in_array( get_post_type(), array( 'woodmart_slide', 'cms_block', 'wd_product_tabs', 'wd_floating_block', 'wd_popup', 'woodmart_layout' ), true ) ) {
+			return array();
+		}
+
+		$types = array(
+			// A popup is display:none until Magnific moves it into its own wrapper. It moves the
+			// element rather than copying it, so the tag left on it by the scan travels along and
+			// the popup can be hovered once it is open.
+			'wd_popup'          => array(
+				'label'    => __( 'Popup', 'woodmart-edit-mode' ),
+				'selector' => '#popup-%d.wd-popup-builder',
+			),
+			// The holder spans the viewport with pointer-events: none, so it can neither be hovered
+			// nor framed. The wrap inside it is the block as the visitor sees it.
+			'wd_floating_block' => array(
+				'label'    => __( 'Floating block', 'woodmart-edit-mode' ),
+				'selector' => '#wd-fb-%d > .wd-fb-wrap',
+			),
+		);
+
+		$manager = \XTS\Modules\Floating_Blocks\Manager::get_instance();
+		$data    = array();
+
+		foreach ( $types as $post_type => $type ) {
+			foreach ( $manager->get_current_ids( $post_type ) as $id ) {
+				// The promo popup of the theme settings is listed as "legacy" and has no post.
+				if ( ! is_numeric( $id ) ) {
+					continue;
+				}
+
+				// Both post types take the capabilities of a page, which an author does not have
+				// even though edit_posts got them this far. No editor, no button.
+				$edit_url = $this->get_edit_url( $id );
+
+				if ( ! $edit_url ) {
+					continue;
+				}
+
+				$data[] = array(
+					'selector' => sprintf( $type['selector'], (int) $id ),
+					'actions'  => array(
+						array(
+							'title'    => get_the_title( $id ),
+							'type'     => $type['label'],
+							'edit_url' => $edit_url,
+						),
+					),
+				);
+			}
+		}
+
+		return $data;
 	}
 
 	/**

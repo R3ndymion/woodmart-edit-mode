@@ -19,6 +19,8 @@ It recognises:
 * HTML blocks, wherever they are rendered — footer, header elements, tabs, widgets, mega menu
 * Layouts, on the pages where WoodMart renders one
 * Product loop item layouts, framing just the product grid they govern
+* Popups built with the popup builder, while the popup is open
+* Floating blocks built with the floating block builder
 * Navigation menus, wherever they are rendered — header, mobile panel, sticky nav, footer, widgets
 * The current header, opening WoodMart's front-end header builder
 * Slides, which also offer a second button for the slider they belong to
@@ -60,6 +62,9 @@ present in the initial page response.
 * `wdem_defer_to_theme` (bool) — return false to run alongside the theme's own edit mode.
 
 == Changelog ==
+
+= Unreleased =
+* Popups and floating blocks are now recognised and link to their builders.
 
 = 1.0.2 =
 * Navigation menus are now recognised and link to their screen in Appearance → Menus.

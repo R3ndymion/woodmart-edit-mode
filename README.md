@@ -16,6 +16,8 @@ Works with Elementor, WPBakery and Gutenberg-built content. Requires the
 | HTML blocks (`cms_block`) | the block's editor, wherever it is rendered — footer, header elements, tabs, widgets, mega menu |
 | Layouts (`woodmart_layout`) | the layout's editor |
 | Product loop item layouts | the card layout, framing just the product grid it governs |
+| Popups (`wd_popup`) | the popup's editor, while the popup is open |
+| Floating blocks (`wd_floating_block`) | the floating block's editor |
 | Navigation menus | that menu in **Appearance → Menus** |
 | The current header | WoodMart's front-end header builder |
 | Slides | the slide, plus a second button for its slider |
@@ -57,6 +59,13 @@ the theme:
 - **Header and sliders** — already identifiable in the markup, via
   `header.whb-header` and the `data-slide` / `data-slider` attributes WoodMart prints
   for logged-in users.
+- **Popups and floating blocks** — identifiable too, as `#popup-{ID}` and
+  `#wd-fb-{ID}`, but the markup does not say which of them this page chose to print.
+  WoodMart decides that from display conditions it keeps in a transient, so the plugin
+  asks it the same question again; anything that did not print matches nothing in the
+  DOM. A popup is `display: none` until it opens, and Magnific Popup *moves* the
+  element into its wrapper rather than copying it, so the tag left on it at load
+  survives and the open popup can be hovered.
 
 ## Who sees it
 
@@ -81,7 +90,7 @@ which is then replaced wholesale, and the content itself arrives through
 
 ## Tests
 
-The behaviour is covered by a jsdom harness rather than by clicking — 74 assertions
+The behaviour is covered by a jsdom harness rather than by clicking — 82 assertions
 across hover resolution, nesting precedence, dropdown handling, button placement and
 the admin bar cascade.
 

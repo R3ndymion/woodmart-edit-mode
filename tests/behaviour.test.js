@@ -65,6 +65,17 @@ const html = `<!doctype html><html><body>
 		</div>
 	</li>
 </ul>
+<div id="wd-fb-12" class="wd-fb-holder wd-deferred wd-scroll">
+	<div id="fb-wrap" class="wd-fb-wrap">
+		<div class="wd-fb"><div class="wd-fb-inner"><div id="fb-content">floating block content</div></div></div>
+	</div>
+</div>
+<div id="popup-34" class="wd-popup-builder wd-popup wd-deferred wd-scroll-content">
+	<div class="wd-popup-inner">
+		<div id="popup-text">promo text</div>
+		<!--wd-em-start:90--><div id="popup-block">html block in the popup</div><!--wd-em-end:90-->
+	</div>
+</div>
 </body></html>`;
 
 const dom = new JSDOM(html, { runScripts: 'outside-only', pretendToBeVisual: true, url: 'http://example.test/shop/' });
@@ -97,7 +108,10 @@ const RECTS = {
 	'main-content': rect(250, 0, 800, 1024),
 	'grid': rect(900, 0, 300, 1024),
 	'product-card': rect(900, 0, 300, 240),
-	'below-grid': rect(1210, 0, 40, 1024)
+	'below-grid': rect(1210, 0, 40, 1024),
+	'wd-fb-12': rect(0, 0, 768, 1024),
+	'fb-wrap': rect(600, 700, 150, 300),
+	'popup-34': rect(150, 200, 400, 600)
 };
 
 window.Element.prototype.getBoundingClientRect = function() {
@@ -114,7 +128,8 @@ window.wdemEditMode = {
 		'menu-7': { title: 'Main Menu', type: 'Menu', edit_url: 'http://example.test/nav-menus.php?action=edit&menu=7' },
 		50: { title: 'Shop layout', type: 'Layout', edit_url: 'http://example.test/edit-50' },
 		60: { title: 'Menu block', type: 'HTML Block', edit_url: 'http://example.test/edit-60' },
-		70: { title: 'Clicked block', type: 'HTML Block', edit_url: 'http://example.test/edit-70' }
+		70: { title: 'Clicked block', type: 'HTML Block', edit_url: 'http://example.test/edit-70' },
+		90: { title: 'Popup block', type: 'HTML Block', edit_url: 'http://example.test/edit-90' }
 	},
 	selectors: [
 		{
@@ -124,6 +139,14 @@ window.wdemEditMode = {
 		{
 			selector: '.wd-loop-item-wrap-99',
 			actions: [ { title: 'Card design', type: 'Product loop item', edit_url: 'http://example.test/edit-loop-99' } ]
+		},
+		{
+			selector: '#wd-fb-12 > .wd-fb-wrap',
+			actions: [ { title: 'Cookie bar', type: 'Floating block', edit_url: 'http://example.test/edit-fb-12' } ]
+		},
+		{
+			selector: '#popup-34.wd-popup-builder',
+			actions: [ { title: 'Newsletter', type: 'Popup', edit_url: 'http://example.test/edit-popup-34' } ]
 		},
 		{
 			selector: 'main#main-content',
@@ -280,6 +303,30 @@ async function main() {
 
 	hover('a');
 	check('a plain block is back to one button', allButtons().length, 1);
+
+	// Floating blocks. The holder spans the viewport, only the wrap inside it is the block.
+	hover('fb-content');
+	check('hovering a floating block picks it', href(0), 'http://example.test/edit-fb-12');
+	check('floating block label', label(), 'Edit: Cookie barFloating block');
+	check('the frame is the wrap, not the holder', doc.querySelector('.wd-em-frame').style.width, '300px');
+
+	// Popups. Hidden at scan time, still tagged, and hoverable once the theme opens them.
+	hover('popup-text');
+	check('hovering a popup picks it', href(0), 'http://example.test/edit-popup-34');
+	check('popup label', label(), 'Edit: NewsletterPopup');
+
+	hover('popup-block');
+	check('a block inside the popup still wins', href(0), 'http://example.test/edit-90');
+
+	// Magnific moves the popup into its own wrapper rather than copying it, so the tag travels.
+	const mfpWrap = doc.createElement('div');
+	mfpWrap.className = 'mfp-wrap';
+	doc.body.appendChild(mfpWrap);
+	mfpWrap.appendChild(doc.getElementById('popup-34'));
+
+	hover('popup-text');
+	check('an opened popup is still editable', href(0), 'http://example.test/edit-popup-34');
+	check('and the frame still follows it', doc.querySelector('.wd-em-frame').style.height, '400px');
 
 	// Leaving the block keeps the frame alive long enough to reach the button.
 	hover('a');
