@@ -1,0 +1,97 @@
+#wp-admin-bar-wdem-edit-mode .ab-icon:before {
+	content: "\f464";
+	top: 2px;
+}
+
+/* Beats the admin bar hover and focus colours so the active state stays readable. */
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active > .ab-item,
+#wpadminbar:not(.mobile) #wp-admin-bar-wdem-edit-mode.wd-active:hover > .ab-item,
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active.hover > .ab-item,
+#wpadminbar:not(.mobile) #wp-admin-bar-wdem-edit-mode.wd-active > .ab-item:focus {
+	background-color: #7367f0;
+	color: #fff;
+}
+
+#wpadminbar:not(.mobile) #wp-admin-bar-wdem-edit-mode.wd-active:hover > .ab-item,
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active.hover > .ab-item,
+#wpadminbar:not(.mobile) #wp-admin-bar-wdem-edit-mode.wd-active > .ab-item:focus {
+	background-color: #5b4fe0;
+}
+
+#wpadminbar:not(.mobile) #wp-admin-bar-wdem-edit-mode.wd-active > .ab-item > span.ab-label,
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active.hover > .ab-item > span.ab-label {
+	color: #fff;
+}
+
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active > .ab-item > .ab-icon:before {
+	color: #fff;
+}
+
+.wd-em-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 99998;
+	pointer-events: none;
+}
+
+.wd-em-frame {
+	position: fixed;
+	box-sizing: border-box;
+	border: 2px dashed #7367f0;
+	background-color: rgba(115, 103, 240, 0.08);
+	pointer-events: none;
+}
+
+.wd-em-buttons {
+	position: fixed;
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	max-width: 100%;
+	pointer-events: none;
+}
+
+.wd-em-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 10px;
+	max-width: 320px;
+	border-radius: 3px;
+	background-color: #7367f0;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	color: #fff;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-size: 12px;
+	line-height: 1.4;
+	text-decoration: none;
+	white-space: nowrap;
+	pointer-events: auto;
+}
+
+.wd-em-button:hover,
+.wd-em-button:focus {
+	background-color: #5b4fe0;
+	color: #fff;
+	text-decoration: none;
+}
+
+.wd-em-button.wd-secondary {
+	background-color: #4b5563;
+}
+
+.wd-em-button.wd-secondary:hover,
+.wd-em-button.wd-secondary:focus {
+	background-color: #374151;
+}
+
+.wd-em-button > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.wd-em-button > b {
+	flex: 0 0 auto;
+	opacity: 0.75;
+	font-weight: 400;
+}

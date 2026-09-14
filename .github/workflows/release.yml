@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install test dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check the plugin loads
+        run: php tests/load.php
+
+      - name: Check the tag matches the plugin version
+        run: |
+          version=$(grep -m1 '^ \* Version:' woodmart-edit-mode.php | awk '{print $3}')
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$version" != "$tag" ]; then
+            echo "Tag $tag does not match plugin version $version" >&2
+            exit 1
+          fi
+
+      - name: Build the installable zip
+        run: |
+          mkdir -p build/woodmart-edit-mode
+          rsync -a --exclude-from=.distignore ./ build/woodmart-edit-mode/
+          cd build && zip -rqX "../woodmart-edit-mode-${GITHUB_REF_NAME#v}.zip" woodmart-edit-mode
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: woodmart-edit-mode-*.zip
+          generate_release_notes: true

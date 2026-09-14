@@ -1,0 +1,10 @@
+.git
+.github
+.gitignore
+.distignore
+build
+node_modules
+package.json
+package-lock.json
+tests
+README.md
