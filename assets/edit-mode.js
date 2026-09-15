@@ -388,6 +388,12 @@
 
 		if (item) {
 			item.classList.toggle('wd-active', enabled);
+
+			var status = item.querySelector('.wd-em-status');
+
+			if (status) {
+				status.textContent = enabled ? settings.labels.on : settings.labels.off;
+			}
 		}
 
 		if (!enabled) {

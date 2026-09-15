@@ -1,6 +1,35 @@
+/* The icon carries the state too: a crossed-out eye when off, an open one when on. */
 #wp-admin-bar-wdem-edit-mode .ab-icon:before {
-	content: "\f464";
+	content: "\f530";
 	top: 2px;
+}
+
+#wp-admin-bar-wdem-edit-mode.wd-active .ab-icon:before {
+	content: "\f177";
+}
+
+#wpadminbar #wp-admin-bar-wdem-edit-mode .wd-em-status {
+	display: inline-block;
+	margin-inline-start: 6px;
+	padding: 0 5px;
+	border-radius: 3px;
+	background-color: rgba(255, 255, 255, .16);
+	color: #c3c4c7;
+	vertical-align: 1px;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 16px;
+	letter-spacing: .06em;
+}
+
+/* Filled in by the script, so nothing flashes before the stored state is known. */
+#wpadminbar #wp-admin-bar-wdem-edit-mode .wd-em-status:empty {
+	display: none;
+}
+
+#wpadminbar #wp-admin-bar-wdem-edit-mode.wd-active .wd-em-status {
+	background-color: rgba(255, 255, 255, .26);
+	color: #fff;
 }
 
 /* Beats the admin bar hover and focus colours so the active state stays readable. */

@@ -7,7 +7,7 @@ const script = asset('edit-mode.js');
 
 const html = `<!doctype html><html><body>
 <div id="outside">nothing editable here</div>
-<div id="wpadminbar"><ul><li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#">Edit mode</a></li></ul></div>
+<div id="wpadminbar"><ul><li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Edit mode</span><span class="wd-em-status"></span></a></li></ul></div>
 <header id="site-header" class="whb-header">
 	<div id="header-logo">logo</div>
 	<!--wd-em-start:40--><div id="header-block">header html block</div><!--wd-em-end:40-->
@@ -70,6 +70,30 @@ const html = `<!doctype html><html><body>
 		<div class="wd-fb"><div class="wd-fb-inner"><div id="fb-content">floating block content</div></div></div>
 	</div>
 </div>
+<aside id="sidebar" class="wd-sidebar sidebar-container">
+	<div id="sidebar-heading" class="wd-heading">close</div>
+	<div id="widget-area" class="widget-area">
+		<!--wd-em-start:widgets-sidebar-shop-->
+		<link rel="stylesheet" href="widget.css">
+		<div id="widget-price" class="wd-widget widget sidebar-widget">Filter by price</div>
+		<div id="widget-stock" class="wd-widget widget sidebar-widget"><span id="stock-label">In stock</span></div>
+		<!--wd-em-end:widgets-sidebar-shop-->
+	</div>
+</aside>
+<footer class="wd-footer">
+	<div id="copyrights" class="wd-copyrights copyrights-wrapper wd-layout-two-columns">
+		<div class="container wd-grid-g">
+			<div id="copyrights-left" class="wd-col-start reset-last-child"><p>&copy; 2026 Shop</p></div>
+			<div id="copyrights-right" class="wd-col-end reset-last-child"><span id="payments">payments</span></div>
+		</div>
+	</div>
+</footer>
+<div id="cookies" class="wd-cookies-popup">
+	<div class="wd-cookies-inner">
+		<div id="cookies-text" class="cookies-info-text">We use cookies.</div>
+		<div id="cookies-buttons" class="cookies-buttons"><a href="#" class="cookies-accept-btn">Accept</a></div>
+	</div>
+</div>
 <div id="popup-34" class="wd-popup-builder wd-popup wd-deferred wd-scroll-content">
 	<div class="wd-popup-inner">
 		<div id="popup-text">promo text</div>
@@ -111,7 +135,17 @@ const RECTS = {
 	'below-grid': rect(1210, 0, 40, 1024),
 	'wd-fb-12': rect(0, 0, 768, 1024),
 	'fb-wrap': rect(600, 700, 150, 300),
-	'popup-34': rect(150, 200, 400, 600)
+	'popup-34': rect(150, 200, 400, 600),
+	'copyrights': rect(1300, 0, 60, 1024),
+	'copyrights-left': rect(1310, 20, 40, 500),
+	'copyrights-right': rect(1310, 600, 40, 300),
+	'cookies': rect(650, 0, 90, 1024),
+	'cookies-text': rect(660, 20, 40, 700),
+	'cookies-buttons': rect(660, 800, 40, 200),
+	'sidebar': rect(240, 0, 700, 300),
+	'sidebar-heading': rect(240, 0, 40, 300),
+	'widget-price': rect(300, 10, 120, 280),
+	'widget-stock': rect(440, 10, 200, 280)
 };
 
 window.Element.prototype.getBoundingClientRect = function() {
@@ -129,7 +163,8 @@ window.wdemEditMode = {
 		50: { title: 'Shop layout', type: 'Layout', edit_url: 'http://example.test/edit-50' },
 		60: { title: 'Menu block', type: 'HTML Block', edit_url: 'http://example.test/edit-60' },
 		70: { title: 'Clicked block', type: 'HTML Block', edit_url: 'http://example.test/edit-70' },
-		90: { title: 'Popup block', type: 'HTML Block', edit_url: 'http://example.test/edit-90' }
+		90: { title: 'Popup block', type: 'HTML Block', edit_url: 'http://example.test/edit-90' },
+		'widgets-sidebar-shop': { title: 'Shop page Widget Area', type: 'Widget Area', edit_url: 'http://example.test/wp-admin/customize.php?autofocus%5Bsection%5D=sidebar-widgets-sidebar-shop' }
 	},
 	selectors: [
 		{
@@ -145,6 +180,18 @@ window.wdemEditMode = {
 			actions: [ { title: 'Cookie bar', type: 'Floating block', edit_url: 'http://example.test/edit-fb-12' } ]
 		},
 		{
+			selector: '.wd-copyrights .wd-col-start',
+			actions: [ { title: 'Copyrights text', type: 'Theme Settings', edit_url: 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=copyrights_section&wdem-field=copyrights' } ]
+		},
+		{
+			selector: '.wd-copyrights .wd-col-end',
+			actions: [ { title: 'Text next to copyrights', type: 'Theme Settings', edit_url: 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=copyrights_section&wdem-field=copyrights2' } ]
+		},
+		{
+			selector: '.wd-cookies-popup .cookies-info-text',
+			actions: [ { title: 'Popup text', type: 'Theme Settings', edit_url: 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=cookie_section&wdem-field=cookies_text' } ]
+		},
+		{
 			selector: '#popup-34.wd-popup-builder',
 			actions: [ { title: 'Newsletter', type: 'Popup', edit_url: 'http://example.test/edit-popup-34' } ]
 		},
@@ -156,7 +203,7 @@ window.wdemEditMode = {
 			]
 		}
 	],
-	labels: { edit: 'Edit', slide: 'Slide', slider: 'Slider' }
+	labels: { edit: 'Edit', slide: 'Slide', slider: 'Slider', on: 'ON', off: 'OFF' }
 };
 
 window.eval(script);
@@ -177,9 +224,13 @@ async function main() {
 
 	// Toggle.
 	const toggle = doc.querySelector('#wp-admin-bar-wdem-edit-mode > .ab-item');
+	const status = () => doc.querySelector('#wp-admin-bar-wdem-edit-mode .wd-em-status').textContent;
+
 	check('mode off initially', doc.documentElement.classList.contains('wd-edit-mode-on'), false);
+	check('status reads OFF', status(), 'OFF');
 	toggle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 	check('mode on after click', doc.documentElement.classList.contains('wd-edit-mode-on'), true);
+	check('status reads ON', status(), 'ON');
 	check('admin bar item marked active', doc.getElementById('wp-admin-bar-wdem-edit-mode').classList.contains('wd-active'), true);
 	check('state persisted', window.localStorage.getItem('wdem_edit_mode'), '1');
 
@@ -304,6 +355,41 @@ async function main() {
 	hover('a');
 	check('a plain block is back to one button', allButtons().length, 1);
 
+	// Widget areas. Core brackets every dynamic_sidebar() call, so one pair of markers covers the
+	// whole area and every widget inside it resolves to the same button.
+	hover('widget-price');
+	check('hovering a widget picks the area it sits in', href(0), 'http://example.test/wp-admin/customize.php?autofocus%5Bsection%5D=sidebar-widgets-sidebar-shop');
+	check('widget area label', label(), 'Edit: Shop page Widget AreaWidget Area');
+	check('the frame spans the widgets, not one of them', doc.querySelector('.wd-em-frame').style.height, '340px');
+
+	hover('stock-label');
+	check('deep inside a widget still picks the area', href(0), 'http://example.test/wp-admin/customize.php?autofocus%5Bsection%5D=sidebar-widgets-sidebar-shop');
+
+	// The theme prints stylesheet links into the area on the same hook. They are elements between
+	// the markers, so they join the group, and a zero-sized one must not drag the frame to 0,0.
+	check('the frame ignores the stylesheet links beside the widgets', doc.querySelector('.wd-em-frame').style.top, '300px');
+
+	check('the sidebar chrome outside the area is not editable', doc.getElementById('sidebar-heading').hasAttribute('data-wd-em'), false);
+
+	// Areas whose content lives in the theme settings rather than in a post.
+	hover('copyrights-left');
+	check('the copyrights text points at its own option', href(0), 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=copyrights_section&wdem-field=copyrights');
+	check('settings label', label(), 'Edit: Copyrights textTheme Settings');
+	check('the frame is the column, not the whole strip', doc.querySelector('.wd-em-frame').style.width, '500px');
+
+	hover('payments');
+	check('the second column points at the second option', href(0), 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=copyrights_section&wdem-field=copyrights2');
+
+	// Only what a single control actually owns is framed. The band around the columns is layout,
+	// nobody edits it, and outlining it would promise an editor that does not exist.
+	check('the strip around the columns is not editable', doc.getElementById('copyrights').hasAttribute('data-wd-em'), false);
+
+	hover('cookies-text');
+	check('the cookie notice text points at its option', href(0), 'http://example.test/wp-admin/admin.php?page=xts_theme_settings&tab=cookie_section&wdem-field=cookies_text');
+
+	check('the notice around the text is not editable', doc.getElementById('cookies').hasAttribute('data-wd-em'), false);
+	check('and neither are its buttons', doc.getElementById('cookies-buttons').hasAttribute('data-wd-em'), false);
+
 	// Floating blocks. The holder spans the viewport, only the wrap inside it is the block.
 	hover('fb-content');
 	check('hovering a floating block picks it', href(0), 'http://example.test/edit-fb-12');
@@ -345,6 +431,7 @@ async function main() {
 	// Toggle off.
 	toggle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 	check('mode off after second click', doc.documentElement.classList.contains('wd-edit-mode-on'), false);
+	check('status back to OFF', status(), 'OFF');
 	check('overlay hidden', overlay.style.display, 'none');
 }
 

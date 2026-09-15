@@ -21,7 +21,7 @@ const html = `<!doctype html><html><head>
 </head><body>
 <div id="wpadminbar" class="nojq nojs">
 	<div id="wp-toolbar"><ul class="ab-top-menu">
-		<li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Edit mode</span></a></li>
+		<li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Edit mode</span><span class="wd-em-status">OFF</span></a></li>
 		<li id="wp-admin-bar-other"><a class="ab-item" href="#"><span class="ab-label">Other</span></a></li>
 	</ul></div>
 </div>
@@ -57,6 +57,27 @@ li.classList.add('hover');
 check('active + hover keeps our background', css(link, 'background-color'), ACTIVE_HOVER);
 check('active + hover keeps white text', css(link, 'color'), 'rgb(255, 255, 255)');
 check('active + hover keeps white label', css(label, 'color'), 'rgb(255, 255, 255)');
+
+// The icon carries the state as well as the pill. jsdom does not compute pseudo-element
+// styles, so the rules are read straight out of the CSSOM instead.
+function ruleContent(match) {
+	for (const sheet of doc.styleSheets) {
+		for (const rule of sheet.cssRules) {
+			if (rule.selectorText && match(rule.selectorText)) {
+				return rule.style.getPropertyValue('content');
+			}
+		}
+	}
+
+	return null;
+}
+
+const iconOff = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode \.ab-icon:before$/.test(sel.trim()));
+const iconOn = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode\.wd-active \.ab-icon:before$/.test(sel.trim()));
+
+check('icon is the crossed-out eye when off', iconOff, '"\\f530"');
+check('icon is the open eye when on', iconOn, '"\\f177"');
+check('status pill is white when on', css(item.querySelector('.wd-em-status'), 'color'), 'rgb(255, 255, 255)');
 
 // A neighbouring item must not be affected.
 const other = doc.querySelector('#wp-admin-bar-other .ab-item');

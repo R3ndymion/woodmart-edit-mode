@@ -19,6 +19,8 @@ Works with Elementor, WPBakery and Gutenberg-built content. Requires the
 | Popups (`wd_popup`) | the popup's editor, while the popup is open |
 | Floating blocks (`wd_floating_block`) | the floating block's editor |
 | Navigation menus | that menu in **Appearance → Menus** |
+| Widget areas | that area in the customizer, previewing the page you came from |
+| Content set in the theme settings — the copyrights columns, the cookie notice text | that single control in **Theme Settings**, scrolled to and highlighted |
 | The current header | WoodMart's front-end header builder |
 | Slides | the slide, plus a second button for its slider |
 
@@ -56,9 +58,24 @@ the theme:
   layouts get the grid wrapper instead, which WoodMart stamps with
   `wd-loop-item-wrap-{ID}`.
 - **Menus** — core runs every `wp_nav_menu()` call through the `wp_nav_menu` filter.
+- **Widget areas** — core brackets every `dynamic_sidebar()` call with
+  `dynamic_sidebar_before` / `dynamic_sidebar_after`, which covers the sidebar template,
+  the footer columns, the shop filters, the mobile panel and any widget area a page builder
+  drops into a page. One pair of markers per area, not per widget: the customizer is the
+  only editor that can be pointed at a single area, and a single widget cannot be focused
+  at all once a site uses the block widgets screen.
 - **Header and sliders** — already identifiable in the markup, via
   `header.whb-header` and the `data-slide` / `data-slider` attributes WoodMart prints
   for logged-in users.
+- **Theme settings areas** — the markup names them by class, and WoodMart registers its whole
+  options tree on `init` without an `is_admin()` guard, so the front end can read it. For any
+  option id the registry hands back the section to open, the translated label and where it sits
+  in the tree; only the anchor itself is written down. The link uses WoodMart's own `tab=` deep
+  link, plus a `wdem-field=` of ours that a small script on the settings page turns into the
+  theme's own `.xts-highlight-field` treatment — the same one its options search uses.
+  Only what one control actually owns is anchored: the copyrights columns and the notice text,
+  never the band or the popup around them. Framing a whole area would promise an editor for
+  padding and layout that no option covers.
 - **Popups and floating blocks** — identifiable too, as `#popup-{ID}` and
   `#wd-fb-{ID}`, but the markup does not say which of them this page chose to print.
   WoodMart decides that from display conditions it keeps in a transient, so the plugin
@@ -86,11 +103,12 @@ which is then replaced wholesale, and the content itself arrives through
 | --- | --- |
 | `wdem_is_available` (bool) | force the edit mode on or off for a request |
 | `wdem_selectors` (array) | add your own anchors — `array( 'selector' => '…', 'actions' => array( array( 'title', 'type', 'edit_url' ) ) )` |
+| `wdem_settings_anchors` (array) | map more markup to theme settings — `array( 'selector' => '…', 'field' => 'option_id' )` or `'section' => 'section_id'` |
 | `wdem_defer_to_theme` (bool) | return `false` to run alongside a WoodMart version that ships its own edit mode |
 
 ## Tests
 
-The behaviour is covered by a jsdom harness rather than by clicking — 82 assertions
+The behaviour is covered by a jsdom harness rather than by clicking — 115 assertions
 across hover resolution, nesting precedence, dropdown handling, button placement and
 the admin bar cascade.
 

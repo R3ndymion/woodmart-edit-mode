@@ -3,7 +3,7 @@ Contributors: r3ndymion
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 
 Jump from the front-end straight into the editor of whatever you are looking at.
@@ -22,6 +22,8 @@ It recognises:
 * Popups built with the popup builder, while the popup is open
 * Floating blocks built with the floating block builder
 * Navigation menus, wherever they are rendered — header, mobile panel, sticky nav, footer, widgets
+* Widget areas, wherever they are rendered, opening that area in the customizer over the page you came from
+* Content that comes from the theme settings — the copyrights columns, the cookie notice text — opening the exact control behind it
 * The current header, opening WoodMart's front-end header builder
 * Slides, which also offer a second button for the slider they belong to
 
@@ -59,12 +61,15 @@ present in the initial page response.
 
 * `wdem_is_available` (bool) — force the edit mode on or off for a request.
 * `wdem_selectors` (array) — add your own anchors: `array( 'selector' => '...', 'actions' => array( array( 'title', 'type', 'edit_url' ) ) )`.
+* `wdem_settings_anchors` (array) — map more markup to theme settings: `array( 'selector' => '...', 'field' => 'option_id' )`, or `'section' => 'section_id'` for a whole section.
 * `wdem_defer_to_theme` (bool) — return false to run alongside the theme's own edit mode.
 
 == Changelog ==
 
-= Unreleased =
+= 1.0.3 =
 * Popups and floating blocks are now recognised and link to their builders.
+* Widget areas are now recognised and open in the customizer, previewing the page you came from.
+* Content coming from the theme settings, the copyrights columns and the cookie notice text, links to the control behind it.
 
 = 1.0.2 =
 * Navigation menus are now recognised and link to their screen in Appearance → Menus.

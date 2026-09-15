@@ -35,6 +35,13 @@ class WDEM_Plugin {
 	private $is_available = null;
 
 	/**
+	 * Theme settings fields and sections, keyed by id. Filled on first use.
+	 *
+	 * @var array|null
+	 */
+	private $settings_registry = null;
+
+	/**
 	 * Reason the plugin refuses to run, shown as an admin notice.
 	 *
 	 * @var string
@@ -77,9 +84,16 @@ class WDEM_Plugin {
 
 		add_filter( 'wp_nav_menu', array( $this, 'wrap_nav_menu' ), 10, 2 );
 
+		// Widget areas get their markers from core, which fires these around every dynamic_sidebar()
+		// call — the sidebar template, the footer columns, the shop filters, the mobile panel and
+		// any widget area a page builder drops into a page.
+		add_action( 'dynamic_sidebar_before', array( $this, 'mark_widget_area_start' ), 5, 2 );
+		add_action( 'dynamic_sidebar_after', array( $this, 'mark_widget_area_end' ), 15, 2 );
+
 		add_action( 'admin_bar_menu', array( $this, 'add_toggle_to_admin_bar' ), 100 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ), 40 );
 		add_action( 'wp_print_footer_scripts', array( $this, 'localize_data' ), 2 );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_settings_field_highlight' ) );
 	}
 
 	/**
@@ -204,6 +218,111 @@ class WDEM_Plugin {
 	}
 
 	/**
+	 * Open the markers around a widget area.
+	 *
+	 * @param int|string $index       Sidebar id, already normalised by dynamic_sidebar().
+	 * @param bool       $has_widgets Whether anything is going to be rendered.
+	 *
+	 * @return void
+	 */
+	public function mark_widget_area_start( $index, $has_widgets ) {
+		$key = $this->register_widget_area( $index, $has_widgets );
+
+		if ( $key ) {
+			echo '<!--wd-em-start:' . esc_html( $key ) . '-->';
+		}
+	}
+
+	/**
+	 * Close the markers around a widget area.
+	 *
+	 * @param int|string $index       Sidebar id, already normalised by dynamic_sidebar().
+	 * @param bool       $has_widgets Whether anything was rendered.
+	 *
+	 * @return void
+	 */
+	public function mark_widget_area_end( $index, $has_widgets ) {
+		$key = $this->register_widget_area( $index, $has_widgets );
+
+		if ( $key ) {
+			echo '<!--wd-em-end:' . esc_html( $key ) . '-->';
+		}
+	}
+
+	/**
+	 * Decide whether a widget area gets markers, and remember it for the script.
+	 *
+	 * Both ends of the pair ask this the same question about the same sidebar, so they always
+	 * agree and a marker is never left unclosed.
+	 *
+	 * @param int|string $index       Sidebar id.
+	 * @param bool       $has_widgets Whether the sidebar is populated.
+	 *
+	 * @return string Marker id, or an empty string when the area is not to be marked.
+	 */
+	private function register_widget_area( $index, $has_widgets ) {
+		global $wp_registered_sidebars;
+
+		// Core fires these for empty sidebars too. Markers with nothing between them would make
+		// the scan fall back to their container, which is the whole template around the area.
+		if ( ! $has_widgets || $this->blocked_reason || ! $this->is_available() ) {
+			return '';
+		}
+
+		// Editing widgets is an edit_theme_options job; edit_posts got the user this far.
+		if ( ! current_user_can( 'edit_theme_options' ) ) {
+			return '';
+		}
+
+		$index = (string) $index;
+
+		// A sidebar id is free-form. Anything the marker syntax cannot carry is left alone rather
+		// than written out as a comment the scan would not read back.
+		if ( ! preg_match( '/^[\w-]+$/', $index ) || empty( $wp_registered_sidebars[ $index ]['name'] ) ) {
+			return '';
+		}
+
+		$key = 'widgets-' . $index;
+
+		$this->rendered_blocks[ $key ] = array(
+			'title'    => $wp_registered_sidebars[ $index ]['name'],
+			'type'     => __( 'Widget Area', 'woodmart-edit-mode' ),
+			'edit_url' => $this->get_widget_area_url( $index ),
+		);
+
+		return $key;
+	}
+
+	/**
+	 * The customizer URL that opens one widget area, previewing the page it was linked from.
+	 *
+	 * The customizer is the only editor that can be pointed at a single area: it registers a
+	 * section per sidebar whether the site uses the block widgets screen or the classic one, while
+	 * widgets.php reads nothing from its URL at all.
+	 *
+	 * @param string $sidebar_id Sidebar id.
+	 *
+	 * @return string
+	 */
+	private function get_widget_area_url( $sidebar_id ) {
+		global $wp;
+
+		$current = home_url( add_query_arg( array(), $wp->request ) );
+
+		// Built by hand because add_query_arg() does not encode, and both the nested key and the
+		// URLs need it.
+		$query = http_build_query(
+			array(
+				'autofocus' => array( 'section' => 'sidebar-widgets-' . $sidebar_id ),
+				'url'       => $current,
+				'return'    => $current,
+			)
+		);
+
+		return admin_url( 'customize.php?' . $query );
+	}
+
+	/**
 	 * Work out which menu was rendered, the same way wp_nav_menu() does.
 	 *
 	 * @param stdClass $args Menu arguments.
@@ -294,7 +413,7 @@ class WDEM_Plugin {
 			}
 		}
 
-		$data = array_merge( $data, $this->get_floating_blocks_data() );
+		$data = array_merge( $data, $this->get_floating_blocks_data(), $this->get_theme_settings_data() );
 
 		return apply_filters( 'wdem_selectors', $data );
 	}
@@ -371,6 +490,181 @@ class WDEM_Plugin {
 	}
 
 	/**
+	 * Get the areas whose content comes from the theme settings rather than from a post.
+	 *
+	 * The markup gives these away by class alone, and WoodMart registers its whole options tree on
+	 * "init" without an is_admin() guard, so the front end can read it: for any option id the
+	 * registry hands back the section to open, the translated label and where it sits in the tree.
+	 * Only the anchor itself has to be written down here.
+	 *
+	 * @return array
+	 */
+	private function get_theme_settings_data() {
+		if ( ! class_exists( '\XTS\Admin\Modules\Options' ) ) {
+			return array();
+		}
+
+		// The settings page asks for manage_options, which edit_posts got nowhere near.
+		if ( ! current_user_can( apply_filters( 'woodmart_capability_menu_page', 'manage_options', 'xts_theme_settings' ) ) ) {
+			return array();
+		}
+
+		$anchors = apply_filters(
+			'wdem_settings_anchors',
+			array(
+				// The two columns of the copyrights strip under the footer, each its own option.
+				// The strip itself is deliberately left alone: framing the whole band would say
+				// "this is editable" about padding and layout that no single control owns.
+				array(
+					'selector' => '.wd-copyrights .wd-col-start',
+					'field'    => 'copyrights',
+				),
+				array(
+					'selector' => '.wd-copyrights .wd-col-end',
+					'field'    => 'copyrights2',
+				),
+
+				// The text of the cookie law notice. Its buttons are not an option, so nothing
+				// around the text is anchored either.
+				array(
+					'selector' => '.wd-cookies-popup .cookies-info-text',
+					'field'    => 'cookies_text',
+				),
+			)
+		);
+
+		$data = array();
+
+		foreach ( $anchors as $anchor ) {
+			if ( empty( $anchor['selector'] ) ) {
+				continue;
+			}
+
+			$action = isset( $anchor['field'] )
+				? $this->get_settings_field_action( $anchor['field'] )
+				: $this->get_settings_section_action( isset( $anchor['section'] ) ? $anchor['section'] : '' );
+
+			// An option this theme version no longer registers gets no button rather than a link
+			// into a section that is not there any more.
+			if ( ! $action ) {
+				continue;
+			}
+
+			$data[] = array(
+				'selector' => $anchor['selector'],
+				'actions'  => array( $action ),
+			);
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Build the action that opens a single theme settings option.
+	 *
+	 * @param string $field_id Option id.
+	 *
+	 * @return array|null
+	 */
+	private function get_settings_field_action( $field_id ) {
+		$registry = $this->get_settings_registry();
+
+		if ( empty( $registry['fields'][ $field_id ]['section'] ) || empty( $registry['fields'][ $field_id ]['name'] ) ) {
+			return null;
+		}
+
+		$field = $registry['fields'][ $field_id ];
+
+		return array(
+			'title'    => $field['name'],
+			'type'     => __( 'Theme Settings', 'woodmart-edit-mode' ),
+			'edit_url' => $this->get_settings_url( $field['section'], $field_id ),
+		);
+	}
+
+	/**
+	 * Build the action that opens a whole theme settings section.
+	 *
+	 * @param string $section_id Section id.
+	 *
+	 * @return array|null
+	 */
+	private function get_settings_section_action( $section_id ) {
+		$registry = $this->get_settings_registry();
+
+		if ( empty( $registry['sections'][ $section_id ]['name'] ) ) {
+			return null;
+		}
+
+		$section = $registry['sections'][ $section_id ];
+		$parent  = ! empty( $section['parent'] ) && ! empty( $registry['sections'][ $section['parent'] ]['name'] )
+			? $registry['sections'][ $section['parent'] ]['name'] . ' / '
+			: '';
+
+		return array(
+			'title'    => $parent . $section['name'],
+			'type'     => __( 'Theme Settings', 'woodmart-edit-mode' ),
+			'edit_url' => $this->get_settings_url( $section_id ),
+		);
+	}
+
+	/**
+	 * The theme settings page URL, opened on a section and optionally pointed at one option.
+	 *
+	 * "tab" is WoodMart's own deep link — the page reads it while rendering and its navigation
+	 * writes it back on every click. "wdem-field" is ours, read by assets/settings-field.js.
+	 *
+	 * @param string $section_id Section id.
+	 * @param string $field_id   Option id, when the link should land on a single control.
+	 *
+	 * @return string
+	 */
+	private function get_settings_url( $section_id, $field_id = '' ) {
+		$args = array(
+			'page' => 'xts_theme_settings',
+			'tab'  => $section_id,
+		);
+
+		if ( $field_id ) {
+			$args['wdem-field'] = $field_id;
+		}
+
+		return admin_url( 'admin.php?' . http_build_query( $args ) );
+	}
+
+	/**
+	 * Read the theme settings tree, keyed by id.
+	 *
+	 * @return array
+	 */
+	private function get_settings_registry() {
+		if ( null !== $this->settings_registry ) {
+			return $this->settings_registry;
+		}
+
+		$registry = array(
+			'fields'   => array(),
+			'sections' => array(),
+		);
+
+		foreach ( \XTS\Admin\Modules\Options::get_fields() as $field ) {
+			if ( ! empty( $field->args['id'] ) ) {
+				$registry['fields'][ $field->args['id'] ] = $field->args;
+			}
+		}
+
+		foreach ( \XTS\Admin\Modules\Options::get_sections() as $section ) {
+			if ( ! empty( $section['id'] ) ) {
+				$registry['sections'][ $section['id'] ] = $section;
+			}
+		}
+
+		$this->settings_registry = $registry;
+
+		return $this->settings_registry;
+	}
+
+	/**
 	 * Get the layouts that actually rendered on this page.
 	 *
 	 * WoodMart collects them itself while rendering, for its own admin bar menu. There is no hook
@@ -434,7 +728,7 @@ class WDEM_Plugin {
 		$admin_bar->add_node(
 			array(
 				'id'    => 'wdem-edit-mode',
-				'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Edit mode', 'woodmart-edit-mode' ) . '</span>',
+				'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Edit mode', 'woodmart-edit-mode' ) . '</span><span class="wd-em-status"></span>',
 				'href'  => '#',
 				'meta'  => array(
 					'title' => esc_attr__( 'Highlight the editable parts of this page', 'woodmart-edit-mode' ),
@@ -458,6 +752,24 @@ class WDEM_Plugin {
 	}
 
 	/**
+	 * Enqueue the script that walks the theme settings page to the option that was linked to.
+	 *
+	 * The only thing this plugin loads in wp-admin, and only on that one page when a link actually
+	 * asked for an option. Anyone reaching the page already holds the capability the menu asks for.
+	 *
+	 * @return void
+	 */
+	public function enqueue_settings_field_highlight() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Reading a link, not acting on it.
+		if ( empty( $_GET['page'] ) || 'xts_theme_settings' !== $_GET['page'] || empty( $_GET['wdem-field'] ) ) {
+			return;
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		wp_enqueue_script( 'wdem-settings-field', WDEM_URL . 'assets/settings-field.js', array(), WDEM_VERSION, true );
+	}
+
+	/**
 	 * Pass the collected data to the script.
 	 *
 	 * Runs after WoodMart fills its own admin bar data at priority 1, and before the footer scripts
@@ -478,6 +790,8 @@ class WDEM_Plugin {
 				'selectors' => $this->get_selectors_data(),
 				'labels'    => array(
 					'edit'   => esc_html__( 'Edit', 'woodmart-edit-mode' ),
+					'on'     => esc_html_x( 'ON', 'edit mode state', 'woodmart-edit-mode' ),
+					'off'    => esc_html_x( 'OFF', 'edit mode state', 'woodmart-edit-mode' ),
 					'slide'  => esc_html__( 'Slide', 'woodmart-edit-mode' ),
 					'slider' => esc_html__( 'Slider', 'woodmart-edit-mode' ),
 				),
