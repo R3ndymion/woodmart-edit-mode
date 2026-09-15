@@ -67,6 +67,7 @@ present in the initial page response.
 == Changelog ==
 
 = 1.0.3 =
+* The admin bar switch now shows its state: an ON/OFF label and an open or crossed-out eye.
 * Popups and floating blocks are now recognised and link to their builders.
 * Widget areas are now recognised and open in the customizer, previewing the page you came from.
 * Content coming from the theme settings, the copyrights columns and the cookie notice text, links to the control behind it.
