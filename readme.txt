@@ -3,7 +3,7 @@ Contributors: r3ndymion
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 
 Jump from the front-end straight into the editor of whatever you are looking at.
@@ -24,6 +24,8 @@ It recognises:
 * Navigation menus, wherever they are rendered — header, mobile panel, sticky nav, footer, widgets
 * Widget areas, wherever they are rendered, opening that area in the customizer over the page you came from
 * Content that comes from the theme settings — the copyrights columns, the cookie notice text — opening the exact control behind it
+* Contact Form 7 forms, opening that form in Contact → Contact Forms
+* Mailchimp for WordPress forms, opening that form in Mailchimp for WP → Forms
 * The current header, opening WoodMart's front-end header builder
 * Slides, which also offer a second button for the slider they belong to
 
@@ -51,6 +53,14 @@ overlays over each other, so the plugin steps aside. To run it anyway:
 
 `add_filter( 'wdem_defer_to_theme', '__return_false' );`
 
+= The widget area button opens a broken customizer =
+
+A WoodMart bug, not this plugin's: the theme registers its block editor script without the
+dependencies listed in its own `index.asset.php`, and the customizer's widgets panel is the one
+block editor screen that does not load `wp-plugins` by itself. Opening Appearance → Customize →
+Widgets directly shows the same error with this plugin switched off. It affects sites using the
+block widgets editor, and the fix belongs in the theme.
+
 = A block on my page has no button =
 
 Blocks loaded over AJAX are not covered — a mega menu item with "Load dropdown
@@ -65,6 +75,11 @@ present in the initial page response.
 * `wdem_defer_to_theme` (bool) — return false to run alongside the theme's own edit mode.
 
 == Changelog ==
+
+= 1.0.4 =
+* Contact Form 7 forms are now recognised and link to their form in Contact → Contact Forms.
+* Mailchimp for WordPress forms are now recognised and link to their form in Mailchimp for WP → Forms.
+* An HTML block whose whole content is one of those forms now offers both buttons, the form first.
 
 = 1.0.3 =
 * The admin bar switch now shows its state: an ON/OFF label and an open or crossed-out eye.

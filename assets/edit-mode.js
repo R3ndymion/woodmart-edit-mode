@@ -127,14 +127,30 @@
 			var elements = document.querySelectorAll(entry.selector);
 
 			for (var i = 0; i < elements.length; i++) {
-				// A marker group already claimed this element, it is the more precise match.
+				// An earlier group already claimed this element, it is the more precise match.
 				if (elements[i].hasAttribute('data-wd-em')) {
+					mergeIntoGroup(elements[i], entry.actions || []);
 					continue;
 				}
 
 				addTaggedGroup([ elements[i] ], entry.actions || []);
 			}
 		});
+	}
+
+	// An HTML block whose whole content is a contact form leaves its markers around that form and
+	// nothing else, so the block and the selector describe the same element rather than one inside
+	// the other. Neither editor is the wrong answer there, so both are offered, the narrower first.
+	function mergeIntoGroup(element, actions) {
+		var group = groups[element.getAttribute('data-wd-em')];
+
+		// Only when the group is this element on its own: its actions are shared by everything in
+		// it, and the elements beside this one are not what the selector matched.
+		if (!group || !actions.length || 1 !== group.elements.length || group.elements[0] !== element) {
+			return;
+		}
+
+		group.actions = actions.concat(group.actions);
 	}
 
 	function addGroup(id, startNode, endNode) {

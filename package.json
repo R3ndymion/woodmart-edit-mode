@@ -1,6 +1,6 @@
 {
   "name": "woodmart-edit-mode",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Test harness for the WoodMart Edit Mode plugin.",
   "scripts": {

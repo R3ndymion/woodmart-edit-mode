@@ -28,6 +28,14 @@ class WDEM_Plugin {
 	private $rendered_blocks = array();
 
 	/**
+	 * Selector entries for the third-party forms rendered during the current request, keyed to
+	 * keep a form that appears twice on a page from being offered twice.
+	 *
+	 * @var array
+	 */
+	private $rendered_forms = array();
+
+	/**
 	 * Whether the edit mode can be used on the current request.
 	 *
 	 * @var bool|null
@@ -89,6 +97,13 @@ class WDEM_Plugin {
 		// any widget area a page builder drops into a page.
 		add_action( 'dynamic_sidebar_before', array( $this, 'mark_widget_area_start' ), 5, 2 );
 		add_action( 'dynamic_sidebar_after', array( $this, 'mark_widget_area_end' ), 15, 2 );
+
+		// Contact Form 7 and Mailchimp for WordPress both stamp the form's post ID into the
+		// markup, so neither needs markers — only a signal that the form rendered at all. Each of
+		// these fires once per rendered form, on the one path all of that plugin's output takes.
+		// Without the plugin the hook simply never fires.
+		add_action( 'wpcf7_shortcode_callback', array( $this, 'record_contact_form_7' ), 10, 1 );
+		add_action( 'mc4wp_output_form', array( $this, 'record_mailchimp_form' ), 10, 1 );
 
 		add_action( 'admin_bar_menu', array( $this, 'add_toggle_to_admin_bar' ), 100 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ), 40 );
@@ -350,6 +365,97 @@ class WDEM_Plugin {
 	}
 
 	/**
+	 * Remember a Contact Form 7 form that has just been rendered.
+	 *
+	 * The wrapper carries data-wpcf7-id, so the form needs no markers; this hook only answers
+	 * which forms the page decided to print. It runs on the shortcode callback, which is every
+	 * path CF7 has — its block saves the shortcode into the content rather than rendering itself.
+	 *
+	 * @param WPCF7_ContactForm $contact_form Form that was rendered.
+	 *
+	 * @return void
+	 */
+	public function record_contact_form_7( $contact_form ) {
+		if ( $this->blocked_reason || ! $this->is_available() || ! is_object( $contact_form ) || ! method_exists( $contact_form, 'id' ) ) {
+			return;
+		}
+
+		$id = (int) $contact_form->id();
+
+		// Editing a form is its own meta capability, mapped to publish_pages by default. Far above
+		// the edit_posts that got the user into edit mode.
+		if ( ! $id || ! current_user_can( 'wpcf7_edit_contact_form', $id ) ) {
+			return;
+		}
+
+		$this->rendered_forms[ 'wpcf7-' . $id ] = array(
+			// Both the attribute and the id spell the form out, but only the attribute is exactly
+			// the ID: the id also carries the page and an occurrence counter.
+			'selector' => '.wpcf7[data-wpcf7-id="' . $id . '"]',
+			'actions'  => array(
+				array(
+					'title'    => $contact_form->title(),
+					'type'     => __( 'Contact form', 'woodmart-edit-mode' ),
+					'edit_url' => admin_url(
+						'admin.php?' . http_build_query(
+							array(
+								'page'   => 'wpcf7',
+								'post'   => $id,
+								'action' => 'edit',
+							)
+						)
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Remember a Mailchimp for WordPress form that is about to be rendered.
+	 *
+	 * Fires from the one method every MC4WP render path goes through — the shortcode, the block,
+	 * the widget and mc4wp_show_form() alike.
+	 *
+	 * @param MC4WP_Form $form Form that is being rendered.
+	 *
+	 * @return void
+	 */
+	public function record_mailchimp_form( $form ) {
+		if ( $this->blocked_reason || ! $this->is_available() || ! is_object( $form ) || empty( $form->ID ) ) {
+			return;
+		}
+
+		// MC4WP guards its whole admin behind one capability and lets the site filter it.
+		if ( ! current_user_can( (string) apply_filters( 'mc4wp_admin_required_capability', 'manage_options' ) ) ) {
+			return;
+		}
+
+		$id = (int) $form->ID;
+
+		$this->rendered_forms[ 'mc4wp-' . $id ] = array(
+			// The form element carries its post ID as a class. The id attribute is a per-page
+			// counter, so it says nothing about which form this is.
+			'selector' => 'form.mc4wp-form-' . $id,
+			'actions'  => array(
+				array(
+					'title'    => $form->name,
+					'type'     => __( 'Mailchimp form', 'woodmart-edit-mode' ),
+					// Built by hand: mc4wp_get_edit_form_url() lives in an admin-only file.
+					'edit_url' => admin_url(
+						'admin.php?' . http_build_query(
+							array(
+								'page'    => 'mailchimp-for-wp-forms',
+								'view'    => 'edit-form',
+								'form_id' => $id,
+							)
+						)
+					),
+				),
+			),
+		);
+	}
+
+	/**
 	 * Get the elements that are found by a CSS selector instead of the markers.
 	 *
 	 * @return array
@@ -413,7 +519,7 @@ class WDEM_Plugin {
 			}
 		}
 
-		$data = array_merge( $data, $this->get_floating_blocks_data(), $this->get_theme_settings_data() );
+		$data = array_merge( $data, array_values( $this->rendered_forms ), $this->get_floating_blocks_data(), $this->get_theme_settings_data() );
 
 		return apply_filters( 'wdem_selectors', $data );
 	}

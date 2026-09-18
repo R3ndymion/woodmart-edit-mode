@@ -21,6 +21,8 @@ Works with Elementor, WPBakery and Gutenberg-built content. Requires the
 | Navigation menus | that menu in **Appearance → Menus** |
 | Widget areas | that area in the customizer, previewing the page you came from |
 | Content set in the theme settings — the copyrights columns, the cookie notice text | that single control in **Theme Settings**, scrolled to and highlighted |
+| Contact Form 7 forms | that form in **Contact → Contact Forms** |
+| Mailchimp for WordPress forms | that form in **Mailchimp for WP → Forms** |
 | The current header | WoodMart's front-end header builder |
 | Slides | the slide, plus a second button for its slider |
 
@@ -44,8 +46,8 @@ git clone https://github.com/R3ndymion/woodmart-edit-mode.git
 ## How it stays out of the theme's way
 
 The plugin needs to know *where* on the page each entity ended up, which PHP alone
-cannot tell it. It bridges that four different ways, none of which require editing
-the theme:
+cannot tell it. It bridges that a different way per entity, none of which require
+editing the theme or the plugin the entity belongs to:
 
 - **HTML blocks** — WoodMart guards `woodmart_get_html_block()` with
   `function_exists()`, and plugins load before themes, so this plugin's copy of that
@@ -83,6 +85,18 @@ the theme:
   DOM. A popup is `display: none` until it opens, and Magnific Popup *moves* the
   element into its wrapper rather than copying it, so the tag left on it at load
   survives and the open popup can be hovered.
+- **Contact Form 7 and Mailchimp for WordPress forms** — the easiest of the lot, because both
+  plugins already stamp the form's post ID into the markup: `data-wpcf7-id` on the CF7 wrapper,
+  a `mc4wp-form-{ID}` class on the Mailchimp `<form>`. All that is missing is which forms the
+  page printed, and each plugin has exactly one hook that fires once per rendered form —
+  `wpcf7_shortcode_callback` and `mc4wp_output_form`. One hook each covers the shortcode, the
+  block, the widget and WoodMart's own Mailchimp and Contact Form 7 elements, which do nothing
+  but call those shortcodes. Neither plugin needs to be installed; without it the hook never
+  fires.
+
+  A form usually sits inside something that is already editable — an HTML block, a widget area —
+  and being the narrower match it wins. When an HTML block holds *nothing but* the form the two
+  land on the same element, and both buttons are offered, the form first.
 
 ## Who sees it
 
@@ -90,12 +104,39 @@ Only users who can `edit_posts`. Nothing is added to the markup for anyone else,
 the mode never activates inside the Elementor editor, an Elementor preview, the
 front-end header builder, or a PJAX request.
 
-## Known gap
+Getting *into* edit mode is not enough to get every button. Each destination asks for its
+own capability and is checked separately, so a button never lands on "insufficient
+permissions": Theme Settings wants `manage_options`, widget areas `edit_theme_options`,
+Mailchimp forms whatever `mc4wp_admin_required_capability` returns, Contact Form 7 forms the
+`wpcf7_edit_contact_form` meta capability, and HTML blocks, layouts and popups the
+capabilities of their post type.
 
-Blocks loaded over AJAX have no buttons. A mega menu item with *Load dropdown content
+## Known gaps
+
+**Blocks loaded over AJAX have no buttons.** A mega menu item with *Load dropdown content
 via AJAX* enabled is the usual case: the initial response holds only a placeholder,
 which is then replaced wholesale, and the content itself arrives through
 `admin-ajax.php` where `is_admin()` is `true` so no markers are emitted.
+
+**The widget area button can land on a broken customizer**, on WoodMart 8.6.0 and any other
+version carrying the same bug — nothing this plugin can fix from its own side. The theme
+registers its block editor bundle with no dependencies at all:
+
+```php
+// inc/integrations/gutenberg/class-gutenberg.php:376
+wp_register_script( 'xts-blocks', …/build/index.js, array(), WOODMART_VERSION, true );
+```
+
+while its own `build/index.asset.php` beside it lists twenty-one, `wp-plugins` among them. The
+handle is enqueued on every block editor screen, because `build/blocks/row/block.json` names it
+as `editorScript`. In the post editor and on `widgets.php` it survives by luck, since
+`wp-edit-post` and `wp-edit-widgets` both depend on `wp-plugins` — but `wp-customize-widgets`
+does not, so in the customizer the bundle dies on `wp.plugins.registerPlugin` the moment
+`class-wp-customize-widgets.php` fires `enqueue_block_editor_assets`.
+
+It only bites when the site uses the **block** widgets editor, and it is reproducible without
+this plugin by opening **Appearance → Customize → Widgets** directly. The fix belongs in the
+theme — hand `wp_register_script()` the dependencies from `index.asset.php`.
 
 ## Filters
 
@@ -108,7 +149,7 @@ which is then replaced wholesale, and the content itself arrives through
 
 ## Tests
 
-The behaviour is covered by a jsdom harness rather than by clicking — 115 assertions
+The behaviour is covered by a jsdom harness rather than by clicking — 129 assertions
 across hover resolution, nesting precedence, dropdown handling, button placement and
 the admin bar cascade.
 

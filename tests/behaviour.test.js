@@ -29,11 +29,18 @@ const html = `<!doctype html><html><body>
 	<section id="outer">
 		<!--wd-em-start:10-->
 		<div id="a">A</div>
-		<div id="b">B<!--wd-em-start:20--><span id="inner">inner</span><!--wd-em-end:20--></div>
+		<div id="b">B<!--wd-em-start:20--><span id="inner">inner</span><!--wd-em-end:20-->
+			<div id="cf7-wrap" class="wpcf7 no-js" data-wpcf7-id="5" lang="en-US" dir="ltr">
+				<form class="wpcf7-form init"><p id="cf7-field">Your email</p></form>
+			</div>
+		</div>
 		<!--wd-em-end:10-->
 	</section>
 	<!--wd-em-end:50-->
 	<p id="orphan"><!--wd-em-start:30-->text only<!--wd-em-end:30--></p>
+	<!--wd-em-start:25--><div id="cf7-only-wrap" class="wpcf7 no-js" data-wpcf7-id="6" lang="en-US" dir="ltr">
+		<form class="wpcf7-form init"><p id="cf7-only-field">Your name</p></form>
+	</div><!--wd-em-end:25-->
 	<div id="grid" class="products wd-products wd-loop-builder-on wd-loop-item-wrap-99">
 		<div id="product-card" class="wd-product"><div id="product-title">A product</div></div>
 	</div>
@@ -76,7 +83,10 @@ const html = `<!doctype html><html><body>
 		<!--wd-em-start:widgets-sidebar-shop-->
 		<link rel="stylesheet" href="widget.css">
 		<div id="widget-price" class="wd-widget widget sidebar-widget">Filter by price</div>
-		<div id="widget-stock" class="wd-widget widget sidebar-widget"><span id="stock-label">In stock</span></div>
+		<div id="widget-stock" class="wd-widget widget sidebar-widget">
+			<span id="stock-label">In stock</span>
+			<form id="mc4wp-form-1" class="mc4wp-form mc4wp-form-7 mc4wp-form-theme"><div id="mc4wp-fields" class="mc4wp-form-fields">Subscribe</div></form>
+		</div>
 		<!--wd-em-end:widgets-sidebar-shop-->
 	</div>
 </aside>
@@ -145,7 +155,10 @@ const RECTS = {
 	'sidebar': rect(240, 0, 700, 300),
 	'sidebar-heading': rect(240, 0, 40, 300),
 	'widget-price': rect(300, 10, 120, 280),
-	'widget-stock': rect(440, 10, 200, 280)
+	'widget-stock': rect(440, 10, 200, 280),
+	'mc4wp-form-1': rect(500, 20, 120, 260),
+	'cf7-wrap': rect(360, 60, 180, 620),
+	'cf7-only-wrap': rect(560, 60, 160, 580)
 };
 
 window.Element.prototype.getBoundingClientRect = function() {
@@ -164,6 +177,7 @@ window.wdemEditMode = {
 		60: { title: 'Menu block', type: 'HTML Block', edit_url: 'http://example.test/edit-60' },
 		70: { title: 'Clicked block', type: 'HTML Block', edit_url: 'http://example.test/edit-70' },
 		90: { title: 'Popup block', type: 'HTML Block', edit_url: 'http://example.test/edit-90' },
+		25: { title: 'Contact block', type: 'HTML Block', edit_url: 'http://example.test/edit-25' },
 		'widgets-sidebar-shop': { title: 'Shop page Widget Area', type: 'Widget Area', edit_url: 'http://example.test/wp-admin/customize.php?autofocus%5Bsection%5D=sidebar-widgets-sidebar-shop' }
 	},
 	selectors: [
@@ -194,6 +208,18 @@ window.wdemEditMode = {
 		{
 			selector: '#popup-34.wd-popup-builder',
 			actions: [ { title: 'Newsletter', type: 'Popup', edit_url: 'http://example.test/edit-popup-34' } ]
+		},
+		{
+			selector: '.wpcf7[data-wpcf7-id="5"]',
+			actions: [ { title: 'Contact us', type: 'Contact form', edit_url: 'http://example.test/wp-admin/admin.php?page=wpcf7&post=5&action=edit' } ]
+		},
+		{
+			selector: '.wpcf7[data-wpcf7-id="6"]',
+			actions: [ { title: 'Callback request', type: 'Contact form', edit_url: 'http://example.test/wp-admin/admin.php?page=wpcf7&post=6&action=edit' } ]
+		},
+		{
+			selector: 'form.mc4wp-form-7',
+			actions: [ { title: 'Newsletter form', type: 'Mailchimp form', edit_url: 'http://example.test/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=7' } ]
 		},
 		{
 			selector: 'main#main-content',
@@ -370,6 +396,34 @@ async function main() {
 	check('the frame ignores the stylesheet links beside the widgets', doc.querySelector('.wd-em-frame').style.top, '300px');
 
 	check('the sidebar chrome outside the area is not editable', doc.getElementById('sidebar-heading').hasAttribute('data-wd-em'), false);
+
+	// Third-party forms. Both stamp their post ID into the markup, so they are plain selectors —
+	// and both usually sit inside something that is already editable, where the form must win.
+	hover('cf7-field');
+	check('a contact form inside an HTML block wins over the block', href(0), 'http://example.test/wp-admin/admin.php?page=wpcf7&post=5&action=edit');
+	check('contact form label', label(), 'Edit: Contact usContact form');
+	check('only the form button is offered', allButtons().length, 1);
+	check('the frame is the form, not the block', doc.querySelector('.wd-em-frame').style.width, '620px');
+
+	hover('a');
+	check('the block beside the form still points at itself', href(0), 'http://example.test/edit-10');
+
+	// An HTML block holding nothing but the form: the markers and the selector land on the same
+	// element, so neither editor is wrong and both are offered.
+	hover('cf7-only-field');
+	check('a form that is the whole block offers two buttons', allButtons().length, 2);
+	check('the form comes first', href(0), 'http://example.test/wp-admin/admin.php?page=wpcf7&post=6&action=edit');
+	check('the block around it comes second', href(1), 'http://example.test/edit-25');
+	check('the block button is secondary', allButtons()[1].className, 'wd-em-button wd-secondary');
+	check('the frame is the shared element', doc.querySelector('.wd-em-frame').style.width, '580px');
+
+	hover('mc4wp-fields');
+	check('a Mailchimp form inside a widget area wins over the area', href(0), 'http://example.test/wp-admin/admin.php?page=mailchimp-for-wp-forms&view=edit-form&form_id=7');
+	check('Mailchimp form label', label(), 'Edit: Newsletter formMailchimp form');
+	check('the frame is the form, not the widget area', doc.querySelector('.wd-em-frame').style.height, '120px');
+
+	hover('stock-label');
+	check('the widget around the form still picks the area', href(0), 'http://example.test/wp-admin/customize.php?autofocus%5Bsection%5D=sidebar-widgets-sidebar-shop');
 
 	// Areas whose content lives in the theme settings rather than in a post.
 	hover('copyrights-left');
