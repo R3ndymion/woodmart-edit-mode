@@ -5,6 +5,7 @@ define( 'ABSPATH', __DIR__ );
 function plugin_dir_path( $file ) { return dirname( $file ) . '/'; }
 function plugin_dir_url( $file ) { return 'http://example.test/plugin/'; }
 function add_action( ...$args ) {}
+function add_filter( ...$args ) {}
 function apply_filters( $hook, $value ) { return $value; }
 
 require dirname( __DIR__ ) . '/woodmart-edit-mode.php';
@@ -15,6 +16,9 @@ $checks = array(
 	'singleton works'                      => WDEM_Plugin::instance() instanceof WDEM_Plugin,
 	'wrap_block is callable'               => is_callable( array( WDEM_Plugin::instance(), 'wrap_block' ) ),
 	'boot is callable'                     => is_callable( array( 'WDEM_Plugin', 'boot' ) ),
+	'live settings class loads'            => class_exists( 'WDEM_Live_Settings' ),
+	'live settings filter is callable'     => is_callable( array( WDEM_Live_Settings::instance(), 'filter_options' ) ),
+	'editor view exists'                   => file_exists( dirname( __DIR__ ) . '/includes/views/live-settings.php' ),
 );
 
 $failed = false;

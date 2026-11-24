@@ -3,7 +3,7 @@
  * Plugin Name: WoodMart Edit Mode
  * Plugin URI:  https://github.com/R3ndymion/woodmart-edit-mode
  * Description: Adds an "Edit mode" switch to the admin bar. With it on, hovering the front-end highlights the HTML blocks, layouts, menus, header, footer and slides behind what you see and offers a button straight to their editor.
- * Version:     1.0.5
+ * Version:     1.1.0
  * Author:      R3ndymion
  * Author URI:  https://github.com/R3ndymion
  * License:     GPL-2.0-or-later
@@ -17,12 +17,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Direct access not allowed.
 }
 
-define( 'WDEM_VERSION', '1.0.5' );
+define( 'WDEM_VERSION', '1.1.0' );
 define( 'WDEM_FILE', __FILE__ );
 define( 'WDEM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WDEM_URL', plugin_dir_url( __FILE__ ) );
 
 require_once WDEM_PATH . 'includes/class-plugin.php';
+require_once WDEM_PATH . 'includes/class-live-settings.php';
+
+// Before the theme: WoodMart reads its options while functions.php is being included.
+WDEM_Live_Settings::early();
 
 add_action( 'after_setup_theme', array( 'WDEM_Plugin', 'boot' ), 20 );
 

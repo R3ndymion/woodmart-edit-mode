@@ -33,6 +33,35 @@ dropdown is held open while it is highlighted, so you can actually reach the but
 
 The switch is remembered between pages. <kbd>Escape</kbd> turns it off.
 
+## Live settings
+
+A second admin bar link, **Live settings**, opens the theme settings next to a live
+preview of the page you were on, the way the customizer works. Change an option and the
+preview follows without saving anything; **Save** publishes, **Discard** throws the
+changes away. The preview can be switched to tablet and mobile width, and links inside it
+keep the preview, so you can walk to another page and keep editing.
+
+- **The controls are the theme's.** The left panel is WoodMart's own Theme Settings page,
+  framed and stripped of the admin chrome, laid out like the customizer: a list of sections,
+  and the fields of one section under a bar that leads back. Every control, dependency, search and sanitizer
+  is the one the theme ships; nothing is redrawn.
+- **Unsaved values live in a transient per user.** The panel sends only the options that
+  differ from what is saved; they go through the theme's own `sanitize_before_save()` and
+  into `wdem_live_{user ID}`. A preview request carries a nonce (`?wdem-live=`), and only
+  for that request does the `xts-woodmart-options` option read from the transient.
+- **Colours and sizes don't reload.** An option with CSS selectors only changes the theme
+  settings stylesheet, so the preview swaps that stylesheet in place. Anything else reloads
+  the preview, keeping its scroll position.
+- **Nothing leaks.** The theme rebuilds its cached stylesheet on the front end when the
+  cache is missing; inside a preview every write to `xts-woodmart-options` and
+  `xts-theme_settings_*` is refused, so unsaved values never reach visitors.
+- **Saving is the theme's save.** The editor presses the theme's own button. WoodMart 8.7
+  saves over AJAX and rebuilds its stylesheet; the editor then reloads the preview.
+
+Who: anyone the Theme Settings page lets in (`manage_options`, filtered by
+`woodmart_capability_menu_page`). Presets are not edited live — the panel always edits
+the base settings.
+
 ## Install
 
 Download the zip from [Releases](https://github.com/R3ndymion/woodmart-edit-mode/releases)

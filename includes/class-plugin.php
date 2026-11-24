@@ -90,6 +90,8 @@ class WDEM_Plugin {
 			return;
 		}
 
+		WDEM_Live_Settings::instance()->init();
+
 		add_filter( 'wp_nav_menu', array( $this, 'wrap_nav_menu' ), 10, 2 );
 
 		// Widget areas get their markers from core, which fires these around every dynamic_sidebar()

@@ -1,0 +1,232 @@
+/* The theme settings page inside the live settings panel: the form and nothing around it. */
+html.wp-toolbar:has(body.wdem-live-frame) {
+	padding-top: 0;
+
+	/* A classic scrollbar draws a grey track down the edge of the panel. */
+	scrollbar-width: thin;
+	scrollbar-color: #c3c4c7 transparent;
+}
+
+body.wdem-live-frame {
+	#wpadminbar,
+	#adminmenumain,
+	#adminmenuback,
+	#adminmenuwrap,
+	#wpfooter,
+	#screen-meta,
+	#screen-meta-links,
+	.xts-header,
+	.xts-footer,
+	.xts-spotlight-topbar,
+	#wpbody-content > .notice,
+	#wpbody-content > .updated,
+	#wpbody-content > .error,
+	#wpbody-content > .update-nag {
+		display: none !important;
+	}
+
+	#wpcontent,
+	#wpfooter {
+		margin-inline-start: 0;
+		padding-inline: 0;
+	}
+
+	/* Room reserved for the admin bar and the theme's fixed dashboard header, both hidden here. */
+	#wpbody,
+	#wpbody-content {
+		padding-top: 0;
+	}
+
+	/* Edge to edge: the panel is the whole page, so nothing grey shows beside it. */
+	background: #fff;
+
+	#wpbody-content {
+		float: none;
+		width: auto;
+		padding-bottom: 0;
+	}
+
+	.xts-box.xts-options {
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	/* The editor bar names the page, and presets are not edited live. */
+	.xts-box-header {
+		h3,
+		.xts-col-auto {
+			display: none;
+		}
+	}
+
+	/* Screen one: the sections, as a plain list rather than the theme's dark mobile menu. */
+	&.wdem-view-nav {
+		.xts-sections,
+		.wdem-live-crumbs {
+			display: none;
+		}
+
+		.xts-box-content {
+			padding: 0;
+		}
+
+		/* The theme's grid pulls its columns out by the gutter; the list runs edge to edge. */
+		.xts-box-content form > .xts-row {
+			margin-inline: 0;
+		}
+
+		.xts-options-nav-col {
+			padding: 0;
+		}
+	}
+
+	.xts-options-nav-col .xts-nav-vertical {
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+
+		li {
+			margin: 0;
+		}
+
+		> li {
+			border-bottom: 1px solid #f0f0f1;
+
+			> a {
+				padding: 14px 20px;
+				border-radius: 0;
+				background: transparent;
+				color: #1d2327;
+				font-size: 14px;
+				font-weight: 500;
+
+				&:hover,
+				&:focus-visible {
+					background: #f6f7f7;
+					color: #1d2327;
+				}
+			}
+
+			&.xts-active-nav > a {
+				background: #f6f7f7;
+				color: #1d2327;
+			}
+		}
+
+		.xts-sub-menu {
+			padding: 0 0 8px;
+			background: #f6f7f7;
+
+			a {
+				padding: 9px 20px 9px 48px;
+				border-radius: 0;
+				background: transparent;
+				color: #3c434a;
+				font-size: 13px;
+				font-weight: 400;
+
+				&:hover,
+				&:focus-visible {
+					background: transparent;
+					color: #7367f0;
+				}
+			}
+
+			.xts-active-nav > a {
+				color: #7367f0;
+				font-weight: 600;
+			}
+		}
+	}
+
+	/* Screen two: the fields of one section, under a bar that leads back. */
+	&.wdem-view-section {
+		.xts-box-header,
+		.xts-options-nav-col {
+			display: none;
+		}
+
+		.xts-box-content {
+			padding-top: 0;
+		}
+
+		/* The bar carries the title. */
+		.xts-section-title {
+			display: none;
+		}
+	}
+
+	.wdem-live-crumbs {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-inline: -20px;
+		margin-bottom: 16px;
+		padding: 10px 16px;
+		border-bottom: 1px solid #e2e4e7;
+		background: #fff;
+	}
+
+	.wdem-live-back {
+		display: flex;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		padding: 0;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		background: #fff;
+		color: #1d2327;
+		cursor: pointer;
+
+		&:before {
+			content: "\f341";
+			font: normal 18px/1 dashicons;
+		}
+
+		&:hover,
+		&:focus-visible {
+			border-color: #7367f0;
+			color: #7367f0;
+		}
+	}
+
+	.wdem-live-crumbs-text {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		line-height: 1.3;
+	}
+
+	.wdem-live-crumbs-group {
+		color: #646970;
+		font-size: 11px;
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	.wdem-live-crumbs-title {
+		overflow: hidden;
+		font-size: 15px;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* The editor bar has the save button; the theme's own stays, hidden, for the bridge to press. */
+	.xts-options-actions {
+		position: absolute !important;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+	}
+}

@@ -3,7 +3,7 @@ Contributors: r3ndymion
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.1.0
 License: GPLv2 or later
 
 Jump from the front-end straight into the editor of whatever you are looking at.
@@ -28,6 +28,13 @@ It recognises:
 * Mailchimp for WordPress forms, opening that form in Mailchimp for WP → Forms
 * The current header, opening WoodMart's front-end header builder
 * Slides, which also offer a second button for the slider they belong to
+* Footers and page titles built with the site builder, opening their editor
+
+A second link, "Live settings", opens the theme settings beside a live preview of the
+current page, like the customizer: changes show in the preview straight away, and
+nothing reaches visitors until you press Save. Colours and sizes update without a reload,
+the preview can be switched to tablet and mobile width, and links inside it stay in
+preview.
 
 Hovering always resolves to the innermost thing. An HTML block inside a layout
 offers the block, not the layout. Dropdowns are held open while highlighted, so a
@@ -76,7 +83,8 @@ present in the initial page response.
 
 == Changelog ==
 
-= 1.0.5 =
+= 1.1.0 =
+* Live settings: edit the theme settings next to a live preview of the page, the way the customizer works.
 * WoodMart 8.7 support: the Gutenberg header, site builder footers and page titles now link to their editor.
 * Sliders and their slides are recognised again on WoodMart 8.7, which no longer prints their edit links in the markup.
 * The header button is offered only to users who can open the header builder.

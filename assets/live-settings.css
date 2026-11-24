@@ -1,0 +1,261 @@
+:root {
+	--wdem-bar-h: 52px;
+	--wdem-panel-w: 480px;
+	--wdem-accent: #7367f0;
+	--wdem-accent-hover: #5b4fe0;
+	--wdem-border: #dcdcde;
+	--wdem-text: #1d2327;
+	--wdem-muted: #646970;
+	--wdem-stage: #f0f0f1;
+}
+
+*,
+*:before,
+*:after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	overflow: hidden;
+	background: #fff;
+	color: var(--wdem-text);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 13px;
+}
+
+.wdem-live-bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	height: var(--wdem-bar-h);
+	padding-inline-end: 12px;
+	border-bottom: 1px solid var(--wdem-border);
+	background: #fff;
+
+	.wdem-live-close {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		align-self: stretch;
+		width: var(--wdem-bar-h);
+		border-inline-end: 1px solid var(--wdem-border);
+		color: var(--wdem-muted);
+		text-decoration: none;
+
+		&:hover,
+		&:focus {
+			background: var(--wdem-stage);
+			color: var(--wdem-text);
+		}
+
+		.dashicons {
+			width: 24px;
+			height: 24px;
+			font-size: 24px;
+		}
+	}
+
+	.wdem-live-title {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.wdem-live-state {
+		color: var(--wdem-muted);
+		font-size: 11px;
+		font-weight: 400;
+
+		&.wdem-unsaved {
+			color: #b26200;
+		}
+	}
+
+	.wdem-live-devices {
+		display: flex;
+		gap: 2px;
+		margin-inline-start: auto;
+	}
+
+	.wdem-live-device {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 34px;
+		height: 32px;
+		padding: 0;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		color: var(--wdem-muted);
+		cursor: pointer;
+
+		&:hover {
+			color: var(--wdem-text);
+		}
+
+		&.wdem-active {
+			background: var(--wdem-stage);
+			color: var(--wdem-accent);
+		}
+	}
+
+	.wdem-live-actions {
+		display: flex;
+		gap: 8px;
+		margin-inline-start: 16px;
+	}
+}
+
+.wdem-live-btn {
+	height: 32px;
+	padding: 0 14px;
+	border: 1px solid var(--wdem-border);
+	border-radius: 4px;
+	background: #fff;
+	color: var(--wdem-text);
+	font: inherit;
+	font-weight: 500;
+	cursor: pointer;
+
+	&:hover:not(:disabled) {
+		border-color: var(--wdem-muted);
+	}
+
+	&:disabled {
+		opacity: .5;
+		cursor: default;
+	}
+
+	&.wdem-primary {
+		border-color: var(--wdem-accent);
+		background: var(--wdem-accent);
+		color: #fff;
+
+		&:hover:not(:disabled) {
+			border-color: var(--wdem-accent-hover);
+			background: var(--wdem-accent-hover);
+		}
+	}
+}
+
+.wdem-live-body {
+	display: flex;
+	height: calc(100% - var(--wdem-bar-h));
+}
+
+.wdem-live-panel {
+	flex: 0 0 var(--wdem-panel-w);
+	min-width: 360px;
+	max-width: 70vw;
+
+	iframe {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+}
+
+/* Wide enough to grab, drawn as a hairline. */
+.wdem-live-resizer {
+	position: relative;
+	flex: 0 0 6px;
+	margin-inline: -3px;
+	cursor: col-resize;
+	z-index: 2;
+
+	&:before {
+		content: "";
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: 2px;
+		width: 1px;
+		background: var(--wdem-border);
+	}
+
+	&:hover:before,
+	.wdem-resizing &:before {
+		width: 2px;
+		background: var(--wdem-accent);
+	}
+}
+
+/* An iframe swallows the pointer, so a drag over one would stop dead. */
+.wdem-resizing iframe {
+	pointer-events: none;
+}
+
+.wdem-live-stage {
+	position: relative;
+	display: flex;
+	flex: 1 1 auto;
+	justify-content: center;
+	min-width: 0;
+	background: var(--wdem-stage);
+
+	iframe {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border: 0;
+		background: #fff;
+		transition: width .2s ease;
+	}
+
+	&[data-device="tablet"] iframe,
+	&[data-device="mobile"] iframe {
+		box-shadow: 0 0 0 1px var(--wdem-border), 0 8px 24px rgba(0, 0, 0, .08);
+	}
+
+	&[data-device="tablet"] iframe {
+		width: 820px;
+	}
+
+	&[data-device="mobile"] iframe {
+		width: 390px;
+	}
+}
+
+/* A thin bar over the top of the preview while it catches up. */
+.wdem-live-loading {
+	position: absolute;
+	inset-inline: 0;
+	top: 0;
+	height: 3px;
+	overflow: hidden;
+	opacity: 0;
+	transition: opacity .2s;
+	pointer-events: none;
+
+	&:before {
+		content: "";
+		position: absolute;
+		inset-block: 0;
+		width: 30%;
+		background: var(--wdem-accent);
+		animation: wdem-live-loading 1s ease-in-out infinite;
+	}
+
+	.wdem-busy & {
+		opacity: 1;
+	}
+}
+
+@keyframes wdem-live-loading {
+	from {
+		inset-inline-start: -30%;
+	}
+
+	to {
+		inset-inline-start: 100%;
+	}
+}

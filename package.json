@@ -1,10 +1,10 @@
 {
   "name": "woodmart-edit-mode",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "private": true,
   "description": "Test harness for the WoodMart Edit Mode plugin.",
   "scripts": {
-    "test": "node tests/behaviour.test.js && node tests/settings-field.test.js && node tests/admin-bar-css.test.js"
+    "test": "node tests/behaviour.test.js && node tests/settings-field.test.js && node tests/admin-bar-css.test.js && node tests/live-settings.test.js"
   },
   "devDependencies": {
     "jsdom": "^20.0.3"

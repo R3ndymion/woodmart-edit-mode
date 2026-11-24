@@ -124,3 +124,9 @@
 	opacity: 0.75;
 	font-weight: 400;
 }
+
+/* The live settings link beside the switch. */
+#wp-admin-bar-wdem-live-settings .ab-icon:before {
+	content: "\f540";
+	top: 2px;
+}
