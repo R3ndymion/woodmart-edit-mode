@@ -1,10 +1,10 @@
 /* The icon carries the state too: a crossed-out eye when off, an open one when on. */
-#wp-admin-bar-wdem-edit-mode .ab-icon:before {
+#wp-admin-bar-wdem-edit-mode > .ab-item > .ab-icon:before {
 	content: "\f530";
 	top: 2px;
 }
 
-#wp-admin-bar-wdem-edit-mode.wd-active .ab-icon:before {
+#wp-admin-bar-wdem-edit-mode.wd-active > .ab-item > .ab-icon:before {
 	content: "\f177";
 }
 
@@ -125,8 +125,24 @@
 	font-weight: 400;
 }
 
-/* The live settings link beside the switch. */
+/* Live settings: in the switch's menu, or in the bar on its own when the switch is off. The eye
+   rules above stop at the switch's own link, so they never reach this icon. */
 #wp-admin-bar-wdem-live-settings .ab-icon:before {
 	content: "\f540";
 	top: 2px;
+}
+
+/* A submenu row is shorter than the bar, so its icon is drawn smaller and set beside the label. */
+#wpadminbar .ab-submenu #wp-admin-bar-wdem-live-settings .ab-icon {
+	float: none;
+	display: inline-block;
+	margin-inline-end: 6px;
+	padding: 0;
+	vertical-align: middle;
+}
+
+#wpadminbar .ab-submenu #wp-admin-bar-wdem-live-settings .ab-icon:before {
+	top: 0;
+	font-size: 16px;
+	line-height: 26px;
 }

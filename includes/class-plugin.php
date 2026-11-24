@@ -1062,9 +1062,9 @@ class WDEM_Plugin {
 			return;
 		}
 
-		wp_enqueue_style( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.css', array(), WDEM_VERSION );
+		wp_enqueue_style( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.css', array(), WDEM_Live_Settings::asset_version( 'assets/edit-mode.css' ) );
 		wp_add_inline_style( 'wdem-edit-mode', self::get_accent_css() );
-		wp_enqueue_script( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.js', array(), WDEM_VERSION, true );
+		wp_enqueue_script( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.js', array(), WDEM_Live_Settings::asset_version( 'assets/edit-mode.js' ), true );
 	}
 
 	/**

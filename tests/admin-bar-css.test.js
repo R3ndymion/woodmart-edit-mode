@@ -30,7 +30,7 @@ const html = `<!doctype html><html><head>
 	<div id="wp-toolbar"><ul class="ab-top-menu">
 		<li id="wp-admin-bar-wdem-edit-mode" class="menupop"><a class="ab-item" aria-haspopup="true" href="#"><span class="ab-icon"></span><span class="ab-label">Live edit</span><span class="wd-em-status">OFF</span></a>
 			<div class="ab-sub-wrapper"><ul id="wp-admin-bar-wdem-edit-mode-default" class="ab-submenu">
-				<li id="wp-admin-bar-wdem-live-settings"><a class="ab-item" href="#">Live settings</a></li>
+				<li id="wp-admin-bar-wdem-live-settings"><a class="ab-item" href="#"><span class="ab-icon" aria-hidden="true"></span><span class="ab-label">Live settings</span></a></li>
 			</ul></div>
 		</li>
 		<li id="wp-admin-bar-other"><a class="ab-item" href="#"><span class="ab-label">Other</span></a></li>
@@ -86,8 +86,8 @@ function ruleContent(match) {
 	return null;
 }
 
-const iconOff = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode \.ab-icon:before$/.test(sel.trim()));
-const iconOn = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode\.wd-active \.ab-icon:before$/.test(sel.trim()));
+const iconOff = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode > \.ab-item > \.ab-icon:before$/.test(sel.trim()));
+const iconOn = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode\.wd-active > \.ab-item > \.ab-icon:before$/.test(sel.trim()));
 
 check('icon is the crossed-out eye when off', iconOff, '"\\f530"');
 check('icon is the open eye when on', iconOn, '"\\f177"');
@@ -96,7 +96,21 @@ check('status pill is white when on', css(item.querySelector('.wd-em-status'), '
 // Live settings sits in the switch's menu; the switch's active colour stays on the switch.
 const submenuLink = doc.querySelector('#wp-admin-bar-wdem-live-settings .ab-item');
 check('the submenu link keeps its own background', css(submenuLink, 'background-color') === ACTIVE || css(submenuLink, 'background-color') === ACTIVE_HOVER, false);
-check('the submenu has no state icon', submenuLink.querySelector('.ab-icon'), null);
+const liveIcon = ruleContent(sel => /#wp-admin-bar-wdem-live-settings \.ab-icon:before$/.test(sel.trim()));
+check('the submenu keeps its own icon', liveIcon, '"\\f540"');
+
+// The eye belongs to the switch's own link; its rules must not match the submenu's icon.
+const eyeSelectors = [];
+for (const sheet of doc.styleSheets) {
+	for (const rule of sheet.cssRules) {
+		if (rule.selectorText && /wdem-edit-mode/.test(rule.selectorText) && /f530|f177/.test(rule.style.getPropertyValue('content'))) {
+			eyeSelectors.push(rule.selectorText.replace(/:before$/, ''));
+		}
+	}
+}
+const submenuIcon = submenuLink.querySelector('.ab-icon');
+li.classList.add('wd-active');
+check('no eye rule reaches the submenu icon', eyeSelectors.some(sel => submenuIcon.matches(sel)), false);
 
 // A neighbouring item must not be affected.
 const other = doc.querySelector('#wp-admin-bar-other .ab-item');

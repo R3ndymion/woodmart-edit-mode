@@ -303,7 +303,7 @@ class WDEM_Live_Settings {
 
 		$node = array(
 			'id'    => 'wdem-live-settings',
-			'title' => esc_html__( 'Live settings', 'woodmart-edit-mode' ),
+			'title' => '<span class="ab-icon" aria-hidden="true"></span><span class="ab-label">' . esc_html__( 'Live settings', 'woodmart-edit-mode' ) . '</span>',
 			'href'  => self::get_editor_url( remove_query_arg( self::PREVIEW_VAR, $current ) ),
 			'meta'  => array(
 				'title' => esc_attr__( 'Edit the theme settings with a live preview of this page', 'woodmart-edit-mode' ),
@@ -315,8 +315,6 @@ class WDEM_Live_Settings {
 		// the link stands on its own in the bar.
 		if ( $admin_bar->get_node( 'wdem-edit-mode' ) ) {
 			$node['parent'] = 'wdem-edit-mode';
-		} else {
-			$node['title'] = '<span class="ab-icon"></span><span class="ab-label">' . $node['title'] . '</span>';
 		}
 
 		$admin_bar->add_node( $node );
