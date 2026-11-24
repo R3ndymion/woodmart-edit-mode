@@ -967,6 +967,49 @@ class WDEM_Plugin {
 	}
 
 	/**
+	 * The accent of the user's admin colour scheme, as CSS variables for the plugin's own styles.
+	 *
+	 * WordPress gives each scheme its accent in base-styles/admin-schemes.css, keyed on the
+	 * admin-color-{scheme} body class. That class only exists in wp-admin, while the edit mode lives
+	 * on the front end and the live settings editor is a page of its own, so the value is read from
+	 * that same file and handed over under names of ours. The default scheme has no rule there and
+	 * takes the components' default, as WordPress itself does.
+	 *
+	 * @return string
+	 */
+	public static function get_accent_css() {
+		static $css = null;
+
+		if ( null !== $css ) {
+			return $css;
+		}
+
+		$scheme = (string) get_user_option( 'admin_color' );
+		$accent = '#3858e9';
+		$hover  = '#2145e6';
+		$file   = ABSPATH . WPINC . '/css/dist/base-styles/admin-schemes.min.css';
+
+		if ( $scheme && preg_match( '/^[\w-]+$/', $scheme ) && is_readable( $file ) ) {
+			$schemes = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local core file.
+
+			if ( preg_match( '/body\.admin-color-' . $scheme . '\{([^}]*)\}/', $schemes, $rule ) ) {
+				if ( preg_match( '/--wp-admin-theme-color:(#[0-9a-fA-F]{3,8})/', $rule[1], $match ) ) {
+					$accent = $match[1];
+					$hover  = $accent;
+				}
+
+				if ( preg_match( '/--wp-admin-theme-color-darker-10:(#[0-9a-fA-F]{3,8})/', $rule[1], $match ) ) {
+					$hover = $match[1];
+				}
+			}
+		}
+
+		$css = ':root{--wdem-accent:' . $accent . ';--wdem-accent-hover:' . $hover . ';}';
+
+		return $css;
+	}
+
+	/**
 	 * Get the editor URL for the given post.
 	 *
 	 * @param int $post_id Post ID.
@@ -1000,7 +1043,7 @@ class WDEM_Plugin {
 		$admin_bar->add_node(
 			array(
 				'id'    => 'wdem-edit-mode',
-				'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Edit mode', 'woodmart-edit-mode' ) . '</span><span class="wd-em-status"></span>',
+				'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Live edit', 'woodmart-edit-mode' ) . '</span><span class="wd-em-status"></span>',
 				'href'  => '#',
 				'meta'  => array(
 					'title' => esc_attr__( 'Highlight the editable parts of this page', 'woodmart-edit-mode' ),
@@ -1020,6 +1063,7 @@ class WDEM_Plugin {
 		}
 
 		wp_enqueue_style( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.css', array(), WDEM_VERSION );
+		wp_add_inline_style( 'wdem-edit-mode', self::get_accent_css() );
 		wp_enqueue_script( 'wdem-edit-mode', WDEM_URL . 'assets/edit-mode.js', array(), WDEM_VERSION, true );
 	}
 

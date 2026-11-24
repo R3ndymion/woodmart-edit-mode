@@ -1,8 +1,9 @@
 :root {
 	--wdem-bar-h: 52px;
 	--wdem-panel-w: 480px;
-	--wdem-accent: #7367f0;
-	--wdem-accent-hover: #5b4fe0;
+	/* Overridden with the accent of the user's admin colour scheme, printed after this file. */
+	--wdem-accent: #3858e9;
+	--wdem-accent-hover: #2145e6;
 	--wdem-border: #dcdcde;
 	--wdem-text: #1d2327;
 	--wdem-muted: #646970;

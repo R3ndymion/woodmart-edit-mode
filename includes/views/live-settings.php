@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<title><?php esc_html_e( 'Live settings', 'woodmart-edit-mode' ); ?></title>
 	<link rel="stylesheet" href="<?php echo esc_url( includes_url( 'css/dashicons.min.css' ) ); ?>">
 	<link rel="stylesheet" href="<?php echo esc_url( WDEM_URL . 'assets/live-settings.css?ver=' . WDEM_Live_Settings::asset_version( 'assets/live-settings.css' ) ); ?>">
+	<style><?php echo WDEM_Plugin::get_accent_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Hex colours matched above. ?></style>
 </head>
 <body class="wdem-live">
 	<div class="wdem-live-bar">

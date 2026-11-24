@@ -12,7 +12,14 @@ if (!adminBarPath) {
 }
 
 const adminBarCss = fs.readFileSync(adminBarPath, 'utf8');
-const ourCss = asset('edit-mode.css');
+const rawCss = asset('edit-mode.css');
+
+// The accent comes from the user's admin colour scheme as CSS variables, which jsdom does not
+// resolve. The values of one scheme, Midnight, stand in for them; the specificity being tested is
+// the same whatever the colour.
+const ourCss = rawCss
+	.replace(/var\(--wdem-accent-hover, [^)]+\)/g, '#bf3127')
+	.replace(/var\(--wdem-accent, [^)]+\)/g, '#cf4339');
 
 // WP prints admin-bar.css first, our inline style after it.
 const html = `<!doctype html><html><head>
@@ -21,7 +28,11 @@ const html = `<!doctype html><html><head>
 </head><body>
 <div id="wpadminbar" class="nojq nojs">
 	<div id="wp-toolbar"><ul class="ab-top-menu">
-		<li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Edit mode</span><span class="wd-em-status">OFF</span></a></li>
+		<li id="wp-admin-bar-wdem-edit-mode" class="menupop"><a class="ab-item" aria-haspopup="true" href="#"><span class="ab-icon"></span><span class="ab-label">Live edit</span><span class="wd-em-status">OFF</span></a>
+			<div class="ab-sub-wrapper"><ul id="wp-admin-bar-wdem-edit-mode-default" class="ab-submenu">
+				<li id="wp-admin-bar-wdem-live-settings"><a class="ab-item" href="#">Live settings</a></li>
+			</ul></div>
+		</li>
 		<li id="wp-admin-bar-other"><a class="ab-item" href="#"><span class="ab-label">Other</span></a></li>
 	</ul></div>
 </div>
@@ -35,8 +46,11 @@ const label = item.querySelector('.ab-label');
 const li = doc.getElementById('wp-admin-bar-wdem-edit-mode');
 
 const css = (el, prop) => window.getComputedStyle(el).getPropertyValue(prop);
-const ACTIVE = 'rgb(115, 103, 240)';
-const ACTIVE_HOVER = 'rgb(91, 79, 224)';
+const ACTIVE = 'rgb(207, 67, 57)';
+const ACTIVE_HOVER = 'rgb(191, 49, 39)';
+
+check('no colour of its own in the stylesheet', /#7367f0|#5b4fe0/i.test(rawCss), false);
+check('the active state takes the scheme accent', /background-color: var\(--wdem-accent,/.test(rawCss), true);
 const WP_HOVER_BG = 'rgb(44, 51, 56)';
 const WP_HOVER_TEXT = 'rgb(114, 174, 230)';
 
@@ -78,6 +92,11 @@ const iconOn = ruleContent(sel => /#wp-admin-bar-wdem-edit-mode\.wd-active \.ab-
 check('icon is the crossed-out eye when off', iconOff, '"\\f530"');
 check('icon is the open eye when on', iconOn, '"\\f177"');
 check('status pill is white when on', css(item.querySelector('.wd-em-status'), 'color'), 'rgb(255, 255, 255)');
+
+// Live settings sits in the switch's menu; the switch's active colour stays on the switch.
+const submenuLink = doc.querySelector('#wp-admin-bar-wdem-live-settings .ab-item');
+check('the submenu link keeps its own background', css(submenuLink, 'background-color') === ACTIVE || css(submenuLink, 'background-color') === ACTIVE_HOVER, false);
+check('the submenu has no state icon', submenuLink.querySelector('.ab-icon'), null);
 
 // A neighbouring item must not be affected.
 const other = doc.querySelector('#wp-admin-bar-other .ab-item');

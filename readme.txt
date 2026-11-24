@@ -10,7 +10,7 @@ Jump from the front-end straight into the editor of whatever you are looking at.
 
 == Description ==
 
-Adds an "Edit mode" switch to the admin bar. Turn it on and the front-end starts
+Adds a "Live edit" switch to the admin bar. Turn it on and the front-end starts
 answering the question "where does this thing actually live?" — hover anything and
 a frame appears around it with a button that opens its editor in a new tab.
 
@@ -30,7 +30,7 @@ It recognises:
 * Slides, which also offer a second button for the slider they belong to
 * Footers and page titles built with the site builder, opening their editor
 
-A second link, "Live settings", opens the theme settings beside a live preview of the
+"Live settings", in the menu of the "Live edit" switch, opens the theme settings beside a live preview of the
 current page, like the customizer: changes show in the preview straight away, and
 nothing reaches visitors until you press Save. Colours and sizes update without a reload,
 the preview can be switched to tablet and mobile width, and links inside it stay in
@@ -49,7 +49,7 @@ markup for anyone else.
 
 1. Upload the plugin folder to `/wp-content/plugins/`, or install the zip through Plugins → Add New → Upload.
 2. Activate it.
-3. Open the front-end and click "Edit mode" in the admin bar.
+3. Open the front-end and click "Live edit" in the admin bar.
 
 == Frequently Asked Questions ==
 

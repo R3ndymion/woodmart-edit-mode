@@ -2,7 +2,7 @@
 
 Jump from the front-end straight into the editor of whatever you are looking at.
 
-Adds an **Edit mode** switch to the WordPress admin bar. Turn it on and hovering the
+Adds a **Live edit** switch to the WordPress admin bar. Turn it on and hovering the
 front-end draws a frame around the nearest editable thing and offers a button that
 opens its editor in a new tab.
 
@@ -35,7 +35,7 @@ The switch is remembered between pages. <kbd>Escape</kbd> turns it off.
 
 ## Live settings
 
-A second admin bar link, **Live settings**, opens the theme settings next to a live
+**Live settings**, in the menu of the **Live edit** switch, opens the theme settings next to a live
 preview of the page you were on, the way the customizer works. Change an option and the
 preview follows without saving anything; **Save** publishes, **Discard** throws the
 changes away. The preview can be switched to tablet and mobile width, and links inside it

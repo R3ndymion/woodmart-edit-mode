@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WoodMart Edit Mode
  * Plugin URI:  https://github.com/R3ndymion/woodmart-edit-mode
- * Description: Adds an "Edit mode" switch to the admin bar. With it on, hovering the front-end highlights the HTML blocks, layouts, menus, header, footer and slides behind what you see and offers a button straight to their editor.
+ * Description: Adds a "Live edit" switch to the admin bar, with live theme settings in its menu. With it on, hovering the front-end highlights the HTML blocks, layouts, menus, header, footer and slides behind what you see and offers a button straight to their editor.
  * Version:     1.1.0
  * Author:      R3ndymion
  * Author URI:  https://github.com/R3ndymion

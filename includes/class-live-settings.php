@@ -301,16 +301,25 @@ class WDEM_Live_Settings {
 		$uri     = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
 		$current = $host ? set_url_scheme( 'http://' . $host . $uri ) : home_url( '/' );
 
-		$admin_bar->add_node(
-			array(
-				'id'    => 'wdem-live-settings',
-				'title' => '<span class="ab-icon"></span><span class="ab-label">' . esc_html__( 'Live settings', 'woodmart-edit-mode' ) . '</span>',
-				'href'  => self::get_editor_url( remove_query_arg( self::PREVIEW_VAR, $current ) ),
-				'meta'  => array(
-					'title' => esc_attr__( 'Edit the theme settings with a live preview of this page', 'woodmart-edit-mode' ),
-				),
-			)
+		$node = array(
+			'id'    => 'wdem-live-settings',
+			'title' => esc_html__( 'Live settings', 'woodmart-edit-mode' ),
+			'href'  => self::get_editor_url( remove_query_arg( self::PREVIEW_VAR, $current ) ),
+			'meta'  => array(
+				'title' => esc_attr__( 'Edit the theme settings with a live preview of this page', 'woodmart-edit-mode' ),
+			),
 		);
+
+		// It lives in the menu of the Live edit switch. The switch is gone when the edit mode is
+		// filtered off for this request, and a child without its parent is never drawn, so then
+		// the link stands on its own in the bar.
+		if ( $admin_bar->get_node( 'wdem-edit-mode' ) ) {
+			$node['parent'] = 'wdem-edit-mode';
+		} else {
+			$node['title'] = '<span class="ab-icon"></span><span class="ab-label">' . $node['title'] . '</span>';
+		}
+
+		$admin_bar->add_node( $node );
 	}
 
 	/**
@@ -429,6 +438,7 @@ class WDEM_Live_Settings {
 		}
 
 		wp_enqueue_style( 'wdem-live-frame', WDEM_URL . 'assets/live-settings-frame.css', array(), self::asset_version( 'assets/live-settings-frame.css' ) );
+		wp_add_inline_style( 'wdem-live-frame', WDEM_Plugin::get_accent_css() );
 		wp_enqueue_script( 'wdem-live-frame', WDEM_URL . 'assets/live-settings-frame.js', array(), self::asset_version( 'assets/live-settings-frame.js' ), true );
 
 		wp_localize_script(

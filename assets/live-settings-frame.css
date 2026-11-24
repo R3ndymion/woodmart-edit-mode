@@ -130,12 +130,12 @@ body.wdem-live-frame {
 				&:hover,
 				&:focus-visible {
 					background: transparent;
-					color: #7367f0;
+					color: var(--wdem-accent, #3858e9);
 				}
 			}
 
 			.xts-active-nav > a {
-				color: #7367f0;
+				color: var(--wdem-accent, #3858e9);
 				font-weight: 600;
 			}
 		}
@@ -193,8 +193,8 @@ body.wdem-live-frame {
 
 		&:hover,
 		&:focus-visible {
-			border-color: #7367f0;
-			color: #7367f0;
+			border-color: var(--wdem-accent, #3858e9);
+			color: var(--wdem-accent, #3858e9);
 		}
 	}
 

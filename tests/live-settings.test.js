@@ -132,13 +132,48 @@ async function frameSuite() {
 	await sleep(700);
 	check('polling does not resend the same state', requests.length, 1);
 
+	// Dragging across a colour picker changes the value on every move; only the value let go of
+	// goes to the preview.
+	const press = (type, buttons) => color.dispatchEvent(new window.MouseEvent(type, { bubbles: true, button: 0, buttons: buttons }));
+	const sentBeforeDrag = requests.length;
+
+	press('pointerdown', 1);
+	['#111111', '#222222', '#333333'].forEach(value => {
+		color.value = value;
+		color.dispatchEvent(new window.Event('input', { bubbles: true }));
+	});
+	await sleep(1000);
+	check('nothing is sent while the button is down', requests.length, sentBeforeDrag);
+
+	press('pointerup', 0);
+	await sleep(400);
+	check('letting go sends once', requests.length, sentBeforeDrag + 1);
+	check('with the value let go of', JSON.stringify(requests[requests.length - 1]['xts-woodmart-options[primary-color][idle]']), '["#333333"]');
+
+	// A release outside the panel never arrives; the next move without a button ends the hold.
+	press('pointerdown', 1);
+	color.value = '#444444';
+	color.dispatchEvent(new window.Event('input', { bubbles: true }));
+	await sleep(700);
+	check('a drag that leaves the panel holds too', requests.length, sentBeforeDrag + 1);
+
+	press('pointermove', 0);
+	await sleep(400);
+	check('and the next move without a button lets go', JSON.stringify(requests[requests.length - 1]['xts-woodmart-options[primary-color][idle]']), '["#444444"]');
+
+	// Back to the colour the rest of the suite expects.
+	color.value = '#e0245e';
+	color.dispatchEvent(new window.Event('change', { bubbles: true }));
+	await sleep(400);
+
 	// A checkbox cleared submits nothing at all, and still has to count as a change.
 	doc.querySelector('[name="xts-woodmart-options[sticky_header]"]').checked = false;
 	doc.querySelector('[name="xts-woodmart-options[sticky_header]"]').dispatchEvent(new window.Event('change', { bubbles: true }));
 	await sleep(400);
 
-	check('a cleared checkbox is sent as a change', JSON.stringify(requests[1]['changed[]']), '["primary-color","sticky_header"]');
-	check('with no value of its own', requests[1]['xts-woodmart-options[sticky_header]'], undefined);
+	const last = requests[requests.length - 1];
+	check('a cleared checkbox is sent as a change', JSON.stringify(last['changed[]']), '["primary-color","sticky_header"]');
+	check('with no value of its own', last['xts-woodmart-options[sticky_header]'], undefined);
 	check('and the editor reloads for it', messages[messages.length - 1].cssOnly, false);
 
 	// Saving is the theme's own button.

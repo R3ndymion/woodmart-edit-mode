@@ -7,7 +7,7 @@ const script = asset('edit-mode.js');
 
 const html = `<!doctype html><html><body>
 <div id="outside">nothing editable here</div>
-<div id="wpadminbar"><ul><li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Edit mode</span><span class="wd-em-status"></span></a></li></ul></div>
+<div id="wpadminbar"><ul><li id="wp-admin-bar-wdem-edit-mode"><a class="ab-item" href="#"><span class="ab-icon"></span><span class="ab-label">Live edit</span><span class="wd-em-status"></span></a></li></ul></div>
 <header id="site-header" class="whb-header">
 	<div id="header-logo">logo</div>
 	<!--wd-em-start:40--><div id="header-block">header html block</div><!--wd-em-end:40-->

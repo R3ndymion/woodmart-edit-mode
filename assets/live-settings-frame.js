@@ -20,6 +20,7 @@
 	var inFlight = false;
 	var queued = false;
 	var timer = null;
+	var held = false;
 
 	function post(message) {
 		message.wdemLive = message.wdemLive || 'update';
@@ -91,7 +92,9 @@
 	function check() {
 		timer = null;
 
-		if (!form || !initial) {
+		// A colour being dragged across the picker, a slider being pulled: the value settles when
+		// the button is let go, and only that value is worth a trip to the preview.
+		if (!form || !initial || held) {
 			return;
 		}
 
@@ -108,6 +111,35 @@
 		}
 
 		send(changed, signature);
+	}
+
+	// The button is down on a control of the form. The window hears the release even when the
+	// drag wandered off the control; a release outside the panel never reaches it at all, so the
+	// first move with no button down ends the hold too.
+	function holdWhilePressed() {
+		function release() {
+			if (!held) {
+				return;
+			}
+
+			held = false;
+			schedule();
+		}
+
+		form.addEventListener('pointerdown', function(event) {
+			if (0 === event.button) {
+				held = true;
+			}
+		}, true);
+
+		window.addEventListener('pointerup', release, true);
+		window.addEventListener('pointercancel', release, true);
+		window.addEventListener('blur', release);
+		document.addEventListener('pointermove', function(event) {
+			if (held && 0 === event.buttons) {
+				release();
+			}
+		}, true);
 	}
 
 	function schedule() {
@@ -292,6 +324,8 @@
 
 			initial = readFields();
 			lastSent = JSON.stringify({});
+
+			holdWhilePressed();
 
 			form.addEventListener('input', schedule, true);
 			form.addEventListener('change', schedule, true);
