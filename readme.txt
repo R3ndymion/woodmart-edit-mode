@@ -3,7 +3,7 @@ Contributors: r3ndymion
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 
 Jump from the front-end straight into the editor of whatever you are looking at.
@@ -75,6 +75,11 @@ present in the initial page response.
 * `wdem_defer_to_theme` (bool) — return false to run alongside the theme's own edit mode.
 
 == Changelog ==
+
+= 1.0.5 =
+* WoodMart 8.7 support: the Gutenberg header, site builder footers and page titles now link to their editor.
+* Sliders and their slides are recognised again on WoodMart 8.7, which no longer prints their edit links in the markup.
+* The header button is offered only to users who can open the header builder.
 
 = 1.0.4 =
 * Contact Form 7 forms are now recognised and link to their form in Contact → Contact Forms.

@@ -57,6 +57,25 @@ const html = `<!doctype html><html><body>
 	</div>
 	<div id="slider-arrows" class="wd-nav-arrows wd-slider-arrows">arrows</div>
 </div>
+<header id="gb-header" class="wd-header wd-header-5 wd-scroll-slide wd-sticky-clone">
+	<div class="wd-header-inner"><div id="gb-header-row" class="wd-header-row">gutenberg header row</div></div>
+</header>
+<div id="gb-header-clone" class="wd-header-clone wd-header-5"><div id="gb-clone-row" class="wd-header-clone-container">sticky clone</div></div>
+<div id="page-title" class="wd-page-title-builder wd-page-title-builder-6 wd-entry-content"><h1 id="page-title-heading">Shop</h1></div>
+<div id="gb-slider" class="wd-slider wd-carousel-container" data-id="8">
+	<div class="wd-carousel-inner">
+		<div class="wd-carousel">
+			<div class="wd-carousel-wrap">
+				<div id="slide-11" class="wd-slide wd-carousel-item"><div id="slide-11-text">eleven</div></div>
+				<div id="slide-12" class="wd-slide wd-carousel-item">twelve</div>
+			</div>
+		</div>
+	</div>
+	<div id="gb-slider-arrows" class="wd-nav-arrows wd-slider-arrows">arrows</div>
+</div>
+<footer id="builder-footer" class="wd-footer wd-footer-builder wd-footer-9 wd-entry-content">
+	<div id="builder-footer-text">footer built in the editor</div>
+</footer>
 <ul class="wd-nav">
 	<li class="wd-event-hover">
 		<a href="#">Menu</a>
@@ -158,7 +177,15 @@ const RECTS = {
 	'widget-stock': rect(440, 10, 200, 280),
 	'mc4wp-form-1': rect(500, 20, 120, 260),
 	'cf7-wrap': rect(360, 60, 180, 620),
-	'cf7-only-wrap': rect(560, 60, 160, 580)
+	'cf7-only-wrap': rect(560, 60, 160, 580),
+	'gb-header': rect(0, 0, 90, 1024),
+	'gb-header-clone': rect(0, 0, 60, 1024),
+	'page-title': rect(90, 0, 120, 1024),
+	'slide-11': rect(1500, 0, 400, 1024),
+	'slide-12': rect(1500, 0, 400, 1024),
+	'gb-slider-arrows': rect(1700, 0, 40, 1024),
+	'gb-slider': rect(1500, 0, 440, 1024),
+	'builder-footer': rect(2000, 0, 300, 1024)
 };
 
 window.Element.prototype.getBoundingClientRect = function() {
@@ -184,6 +211,36 @@ window.wdemEditMode = {
 		{
 			selector: 'header.whb-header',
 			actions: [ { title: 'Main header', type: 'Header', edit_url: 'http://example.test/shop/?whb-header-frontend=1' } ]
+		},
+		{
+			selector: '.wd-header.wd-header-5, .wd-header-clone.wd-header-5',
+			actions: [ { title: 'Gutenberg header', type: 'Header', edit_url: 'http://example.test/wp-admin/post.php?post=5&action=edit' } ]
+		},
+		{
+			selector: '.wd-footer.wd-footer-9',
+			actions: [ { title: 'Main footer', type: 'Footer', edit_url: 'http://example.test/wp-admin/post.php?post=9&action=edit' } ]
+		},
+		{
+			selector: '.wd-page-title-builder.wd-page-title-builder-6',
+			actions: [ { title: 'Shop title', type: 'Page title', edit_url: 'http://example.test/wp-admin/post.php?post=6&action=edit' } ]
+		},
+		{
+			selector: '.wd-slider[data-id="8"] .wd-slide#slide-11',
+			actions: [
+				{ title: 'Eleventh slide', type: 'Slide', edit_url: 'http://example.test/edit-slide-11' },
+				{ title: 'Builder slider', type: 'Slider', edit_url: 'http://example.test/edit-slider-8' }
+			]
+		},
+		{
+			selector: '.wd-slider[data-id="8"] .wd-slide#slide-12',
+			actions: [
+				{ title: 'Twelfth slide', type: 'Slide', edit_url: 'http://example.test/edit-slide-12' },
+				{ title: 'Builder slider', type: 'Slider', edit_url: 'http://example.test/edit-slider-8' }
+			]
+		},
+		{
+			selector: '.wd-slider[data-id="8"]',
+			actions: [ { title: 'Builder slider', type: 'Slider', edit_url: 'http://example.test/edit-slider-8' } ]
 		},
 		{
 			selector: '.wd-loop-item-wrap-99',
@@ -467,6 +524,36 @@ async function main() {
 	hover('popup-text');
 	check('an opened popup is still editable', href(0), 'http://example.test/edit-popup-34');
 	check('and the frame still follows it', doc.querySelector('.wd-em-frame').style.height, '400px');
+
+	// Site builder parts of WoodMart 8.7+: posts rendered inside one element carrying their ID.
+	hover('gb-header-row');
+	check('a Gutenberg header points at its post', href(0), 'http://example.test/wp-admin/post.php?post=5&action=edit');
+	check('Gutenberg header label', label(), 'Edit: Gutenberg headerHeader');
+
+	hover('gb-clone-row');
+	check('the sticky clone is the same header', href(0), 'http://example.test/wp-admin/post.php?post=5&action=edit');
+	check('the frame is the clone, not the header behind it', doc.querySelector('.wd-em-frame').style.height, '60px');
+
+	hover('page-title-heading');
+	check('a page title points at its post', href(0), 'http://example.test/wp-admin/post.php?post=6&action=edit');
+	check('page title label', label(), 'Edit: Shop titlePage title');
+
+	hover('builder-footer-text');
+	check('a footer points at its post', href(0), 'http://example.test/wp-admin/post.php?post=9&action=edit');
+	check('footer label', label(), 'Edit: Main footerFooter');
+
+	// Sliders without the data-slide / data-slider attributes: the IDs come from the PHP side.
+	hover('slide-11-text');
+	check('a slide found by its ID offers two buttons', allButtons().length, 2);
+	check('the slide comes first', href(0), 'http://example.test/edit-slide-11');
+	check('the slider comes second', href(1), 'http://example.test/edit-slider-8');
+
+	hover('slide-12');
+	check('the other slide points at itself', href(0), 'http://example.test/edit-slide-12');
+
+	hover('gb-slider-arrows');
+	check('the slider chrome found by its ID edits the slider', href(0), 'http://example.test/edit-slider-8');
+	check('and only the slider', allButtons().length, 1);
 
 	// Leaving the block keeps the frame alive long enough to reach the button.
 	hover('a');

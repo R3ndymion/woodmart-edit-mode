@@ -23,7 +23,8 @@ Works with Elementor, WPBakery and Gutenberg-built content. Requires the
 | Content set in the theme settings — the copyrights columns, the cookie notice text | that single control in **Theme Settings**, scrolled to and highlighted |
 | Contact Form 7 forms | that form in **Contact → Contact Forms** |
 | Mailchimp for WordPress forms | that form in **Mailchimp for WP → Forms** |
-| The current header | WoodMart's front-end header builder |
+| The current header | the header's editor (`wd_header`), or WoodMart's front-end header builder for a legacy header |
+| Footers (`wd_footer`) and page titles (`wd_page_title`) | their editor |
 | Slides | the slide, plus a second button for its slider |
 
 Hovering always resolves to the **innermost** thing. A block inside a layout offers
@@ -66,9 +67,16 @@ editing the theme or the plugin the entity belongs to:
   drops into a page. One pair of markers per area, not per widget: the customizer is the
   only editor that can be pointed at a single area, and a single widget cannot be focused
   at all once a site uses the block widgets screen.
-- **Header and sliders** — already identifiable in the markup, via
-  `header.whb-header` and the `data-slide` / `data-slider` attributes WoodMart prints
-  for logged-in users.
+- **Header** — a Gutenberg header is a `wd_header` post rendered inside
+  `<header class="wd-header wd-header-{ID}">`; the sticky clone carries the same ID class.
+  The post comes from WoodMart's header resolver. A legacy header is `header.whb-header`.
+- **Footers and page titles** — site builder posts. WoodMart renders each inside one
+  element with the ID in its class (`wd-footer-{ID}`, `wd-page-title-builder-{ID}`) and
+  reports it to the same admin bar global as layouts.
+- **Sliders** — reported to that global too. The markup gives the slider's ID in `data-id`
+  on `.wd-slider` and each slide's in `id="slide-{ID}"`, so the plugin lists the slides of
+  every rendered slider and anchors them by ID. Older WoodMart versions printed
+  `data-slide` / `data-slider` attributes instead; those are still read.
 - **Theme settings areas** — the markup names them by class, and WoodMart registers its whole
   options tree on `init` without an `is_admin()` guard, so the front end can read it. For any
   option id the registry hands back the section to open, the translated label and where it sits

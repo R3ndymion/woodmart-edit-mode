@@ -465,11 +465,11 @@ class WDEM_Plugin {
 
 		$page_actions = array();
 
-		foreach ( $this->get_rendered_layouts() as $id => $layout ) {
+		foreach ( $this->get_rendered_templates( 'woodmart_layout' ) as $id => $layout ) {
 			// A product loop item layout governs the product grid and nothing else. WoodMart puts
 			// its ID on that grid's wrapper in woocommerce/loop/loop-start.php, which makes a far
 			// more precise anchor than the whole page. Several grids can share one layout.
-			if ( 'product_loop_item' === $layout['layout_type'] ) {
+			if ( 'product_loop_item' === (string) get_post_meta( $id, 'wd_layout_type', true ) ) {
 				$data[] = array(
 					'selector' => '.wd-loop-item-wrap-' . (int) $id,
 					'actions'  => array(
@@ -500,28 +500,186 @@ class WDEM_Plugin {
 			);
 		}
 
-		if ( function_exists( 'whb_get_header' ) ) {
-			$header = whb_get_header();
+		$data = array_merge(
+			$data,
+			$this->get_header_data(),
+			$this->get_site_parts_data(),
+			$this->get_sliders_data(),
+			array_values( $this->rendered_forms ),
+			$this->get_floating_blocks_data(),
+			$this->get_theme_settings_data()
+		);
 
-			if ( $header ) {
-				global $wp;
+		return apply_filters( 'wdem_selectors', $data );
+	}
 
-				$data[] = array(
-					'selector' => 'header.whb-header',
+	/**
+	 * Get the header of the page.
+	 *
+	 * WoodMart has two header builders. The Gutenberg one keeps each header as a wd_header post and
+	 * renders it inside <header class="wd-header wd-header-{ID}">; the sticky clone its script builds
+	 * carries the same ID class. The legacy one prints header.whb-header and is edited on the front
+	 * end. Both are listed under the header builder page, so both take its capability.
+	 *
+	 * @return array
+	 */
+	private function get_header_data() {
+		if ( ! current_user_can( apply_filters( 'woodmart_capability_menu_page', 'manage_options', 'xts_header_builder' ) ) ) {
+			return array();
+		}
+
+		if ( function_exists( 'woodmart_is_gutenberg_header' ) && woodmart_is_gutenberg_header() ) {
+			$header_id = class_exists( '\XTS\Modules\Gutenberg_Header\Resolver' ) ? (int) \XTS\Modules\Gutenberg_Header\Resolver::get_instance()->get_current_id() : 0;
+
+			// No header matches the page: the theme prints its fallback header, which is no post.
+			$edit_url = $header_id ? $this->get_edit_url( $header_id ) : '';
+
+			if ( ! $edit_url ) {
+				return array();
+			}
+
+			return array(
+				array(
+					'selector' => '.wd-header.wd-header-' . $header_id . ', .wd-header-clone.wd-header-' . $header_id,
 					'actions'  => array(
 						array(
-							'title'    => $header->get_name(),
+							'title'    => get_the_title( $header_id ),
 							'type'     => __( 'Header', 'woodmart-edit-mode' ),
-							'edit_url' => home_url( add_query_arg( array(), $wp->request ) ) . '?whb-header-frontend=' . $header->get_id(),
+							'edit_url' => $edit_url,
+						),
+					),
+				),
+			);
+		}
+
+		$header = function_exists( 'whb_get_header' ) ? whb_get_header() : false;
+
+		if ( ! $header ) {
+			return array();
+		}
+
+		global $wp;
+
+		return array(
+			array(
+				'selector' => 'header.whb-header',
+				'actions'  => array(
+					array(
+						'title'    => $header->get_name(),
+						'type'     => __( 'Header', 'woodmart-edit-mode' ),
+						'edit_url' => home_url( add_query_arg( array(), $wp->request ) ) . '?whb-header-frontend=' . $header->get_id(),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get the footer and the page title of the page.
+	 *
+	 * Both are posts of the site builder. WoodMart renders each inside one element that carries the
+	 * post ID as a class, and reports it to its admin bar data on the way.
+	 *
+	 * @return array
+	 */
+	private function get_site_parts_data() {
+		$parts = array(
+			'wd_footer'     => array(
+				'label'    => __( 'Footer', 'woodmart-edit-mode' ),
+				'selector' => '.wd-footer.wd-footer-%d',
+			),
+			'wd_page_title' => array(
+				'label'    => __( 'Page title', 'woodmart-edit-mode' ),
+				'selector' => '.wd-page-title-builder.wd-page-title-builder-%d',
+			),
+		);
+
+		$data = array();
+
+		foreach ( $parts as $post_type => $part ) {
+			foreach ( $this->get_rendered_templates( $post_type ) as $id => $template ) {
+				$data[] = array(
+					'selector' => sprintf( $part['selector'], $id ),
+					'actions'  => array(
+						array(
+							'title'    => $template['title'],
+							'type'     => $part['label'],
+							'edit_url' => $template['edit_url'],
 						),
 					),
 				);
 			}
 		}
 
-		$data = array_merge( $data, array_values( $this->rendered_forms ), $this->get_floating_blocks_data(), $this->get_theme_settings_data() );
+		return $data;
+	}
 
-		return apply_filters( 'wdem_selectors', $data );
+	/**
+	 * Get the sliders of the page and their slides.
+	 *
+	 * WoodMart reports every rendered slider to its admin bar data, already checked against
+	 * manage_categories. The markup says which slider an element belongs to through data-id on
+	 * .wd-slider, and which slide through id="slide-{ID}". A slide offers its own editor plus the
+	 * slider's, so it comes first; the slider chrome around the slides gets the slider alone.
+	 *
+	 * @return array
+	 */
+	private function get_sliders_data() {
+		$data = array();
+
+		foreach ( $this->get_rendered_templates( 'woodmart_slider' ) as $term_id => $slider ) {
+			$slider_action = array(
+				'title'    => $slider['title'],
+				'type'     => __( 'Slider', 'woodmart-edit-mode' ),
+				'edit_url' => $slider['edit_url'],
+			);
+
+			$scope = '.wd-slider[data-id="' . $term_id . '"]';
+
+			$slide_ids = get_posts(
+				array(
+					'post_type'        => 'woodmart_slide',
+					'post_status'      => 'any',
+					'numberposts'      => -1,
+					'fields'           => 'ids',
+					'suppress_filters' => false,
+					'tax_query'        => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+						array(
+							'taxonomy' => 'woodmart_slider',
+							'field'    => 'term_id',
+							'terms'    => $term_id,
+						),
+					),
+				)
+			);
+
+			foreach ( $slide_ids as $slide_id ) {
+				$edit_url = $this->get_edit_url( $slide_id );
+
+				if ( ! $edit_url ) {
+					continue;
+				}
+
+				$data[] = array(
+					'selector' => $scope . ' .wd-slide#slide-' . (int) $slide_id,
+					'actions'  => array(
+						array(
+							'title'    => get_the_title( $slide_id ),
+							'type'     => __( 'Slide', 'woodmart-edit-mode' ),
+							'edit_url' => $edit_url,
+						),
+						$slider_action,
+					),
+				);
+			}
+
+			$data[] = array(
+				'selector' => $scope,
+				'actions'  => array( $slider_action ),
+			);
+		}
+
+		return $data;
 	}
 
 	/**
@@ -771,33 +929,39 @@ class WDEM_Plugin {
 	}
 
 	/**
-	 * Get the layouts that actually rendered on this page.
+	 * Get the templates of one type that actually rendered on this page.
 	 *
-	 * WoodMart collects them itself while rendering, for its own admin bar menu. There is no hook
-	 * around the layout output, so this global is the only honest source of what is on the page.
+	 * WoodMart collects them itself while rendering, for its own admin bar menu: layouts, footers,
+	 * page titles, sliders and more. There is no hook around those renders, so this global is the
+	 * only honest source of what is on the page. Entries without an edit URL belong to a user who
+	 * cannot edit them.
 	 *
-	 * @return array
+	 * @param string $type Post type, or taxonomy for sliders.
+	 *
+	 * @return array ID => array( 'title', 'edit_url' ).
 	 */
-	private function get_rendered_layouts() {
+	private function get_rendered_templates( $type ) {
 		global $woodmart_editable_posts_bar_data;
 
 		if ( ! is_array( $woodmart_editable_posts_bar_data ) ) {
 			return array();
 		}
 
-		$layouts = array();
+		$templates = array();
 
 		foreach ( $woodmart_editable_posts_bar_data as $item ) {
-			if ( isset( $item['type'] ) && 'woodmart_layout' === $item['type'] ) {
-				$layouts[ $item['id'] ] = array(
-					'title'       => $item['title'],
-					'edit_url'    => html_entity_decode( (string) $item['edit_url'] ),
-					'layout_type' => (string) get_post_meta( $item['id'], 'wd_layout_type', true ),
-				);
+			if ( ! isset( $item['type'], $item['id'] ) || $type !== $item['type'] || empty( $item['edit_url'] ) ) {
+				continue;
 			}
+
+			$templates[ (int) $item['id'] ] = array(
+				'title'    => isset( $item['title'] ) ? (string) $item['title'] : '',
+				// get_edit_post_link() escapes for display by default.
+				'edit_url' => html_entity_decode( (string) $item['edit_url'] ),
+			);
 		}
 
-		return $layouts;
+		return $templates;
 	}
 
 	/**
