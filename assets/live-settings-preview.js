@@ -7,6 +7,12 @@
 		return;
 	}
 
+	// Tell the editor what kind of page this is, so opening a section about another kind of page
+	// can move the preview there.
+	if (window.parent !== window) {
+		window.parent.postMessage({ wdemLive: 'preview', contexts: settings.contexts || [] }, window.location.origin);
+	}
+
 	// Whether a URL is a front-end page of this site, the only kind a preview can show.
 	function isPreviewable(url) {
 		return url.origin === window.location.origin && 0 !== url.href.indexOf(settings.admin) && /^https?:$/.test(url.protocol);

@@ -53,11 +53,55 @@ body.wdem-live-frame {
 		box-shadow: none;
 	}
 
-	/* The editor bar names the page, and presets are not edited live. */
-	.xts-box-header {
+	/* The editor bar names the page, and presets are not edited live. What is left is the search,
+	   drawn as a strip across the panel rather than a field inside a padded box. */
+	/* The id outweighs the theme's own rules for its search, which fix a width and a min height. */
+	#wpbody-content .xts-box-header {
+		min-height: 0;
+		height: auto;
+		padding: 0;
+		border-bottom: 0;
+
 		h3,
 		.xts-col-auto {
 			display: none;
+		}
+
+		.xts-row {
+			margin: 0;
+		}
+
+		.xts-col {
+			margin: 0;
+			padding: 0;
+		}
+
+		.xts-options-search {
+			width: 100%;
+			max-width: none;
+
+			&:before {
+				inset-inline-start: 18px;
+			}
+		}
+
+		.xts-options-search input {
+			flex: 1 1 auto;
+			width: 100%;
+			max-width: none;
+			height: 48px;
+			/* The theme sets the inner padding with no room for a heavier selector; the icon moved. */
+			padding-inline: 46px 16px !important;
+			border: 0;
+			border-bottom: 1px solid #e2e4e7;
+			border-radius: 0;
+			box-shadow: none;
+			font-size: 14px;
+
+			&:focus {
+				border-bottom-color: var(--wdem-accent, #3858e9);
+				box-shadow: inset 0 -1px 0 var(--wdem-accent, #3858e9);
+			}
 		}
 	}
 

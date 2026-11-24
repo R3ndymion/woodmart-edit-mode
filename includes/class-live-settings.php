@@ -357,6 +357,7 @@ class WDEM_Live_Settings {
 			'settingsUrl' => admin_url( 'admin.php?' . http_build_query( $settings_args ) ),
 			'previewUrl'  => add_query_arg( self::PREVIEW_VAR, wp_create_nonce( 'wdem_live_preview' ), $url ),
 			'previewVar'  => self::PREVIEW_VAR,
+			'sections'    => (object) $this->get_section_targets(),
 			'cssVar'      => self::CSS_VAR,
 			'closeUrl'    => $url,
 			'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
@@ -611,6 +612,174 @@ class WDEM_Live_Settings {
 	}
 
 	/**
+	 * The page each settings section is about, for the preview to go to when the section opens.
+	 *
+	 * A whole group shares one kind of page — every section of Single product is about a product —
+	 * and a few sections of the Shop group each have a page of their own. A kind with nothing to
+	 * show — no product yet, no shop page — is left out, and the preview stays where it is.
+	 *
+	 * @return array Section id => array( 'context', 'url' ).
+	 */
+	private function get_section_targets() {
+		$groups = array(
+			'general_single_product_section'  => 'product',
+			'general_product_archive_section' => 'product_archive',
+		);
+
+		$sections = array(
+			'variable_products_section'       => 'product',
+			'cart_section'                    => 'cart',
+			'checkout_section'                => 'checkout',
+			'my_account'                      => 'account',
+			'blog_archive_section'            => 'blog',
+			'blog_singe_post_section'         => 'post',
+			'portfolio_archive_section'       => 'portfolio_archive',
+			'portfolio_singe_project_section' => 'portfolio',
+		);
+
+		foreach ( \XTS\Admin\Modules\Options::get_sections() as $section ) {
+			if ( ! empty( $section['id'] ) && ! empty( $section['parent'] ) && isset( $groups[ $section['parent'] ] ) && ! isset( $sections[ $section['id'] ] ) ) {
+				$sections[ $section['id'] ] = $groups[ $section['parent'] ];
+			}
+		}
+
+		$urls    = array();
+		$targets = array();
+
+		foreach ( $sections as $section_id => $context ) {
+			if ( ! array_key_exists( $context, $urls ) ) {
+				$urls[ $context ] = $this->get_context_url( $context );
+			}
+
+			if ( $urls[ $context ] ) {
+				$targets[ $section_id ] = array(
+					'context' => $context,
+					'url'     => $urls[ $context ],
+				);
+			}
+		}
+
+		/**
+		 * Filters the page the preview goes to when a settings section opens.
+		 *
+		 * @param array $targets Section id => array( 'context', 'url' ).
+		 */
+		return (array) apply_filters( 'wdem_live_section_targets', $targets );
+	}
+
+	/**
+	 * A page of the given kind to preview.
+	 *
+	 * @param string $context Kind of page, see get_page_contexts().
+	 *
+	 * @return string Empty when the site has no such page.
+	 */
+	private function get_context_url( $context ) {
+		$latest = function ( $post_type ) {
+			$ids = get_posts(
+				array(
+					'post_type'        => $post_type,
+					'post_status'      => 'publish',
+					'numberposts'      => 1,
+					'fields'           => 'ids',
+					'suppress_filters' => false,
+				)
+			);
+
+			return $ids ? (string) get_permalink( $ids[0] ) : '';
+		};
+
+		$wc_page = function ( $page ) {
+			$id = function_exists( 'wc_get_page_id' ) ? (int) wc_get_page_id( $page ) : 0;
+
+			return $id > 0 && 'publish' === get_post_status( $id ) ? (string) get_permalink( $id ) : '';
+		};
+
+		switch ( $context ) {
+			case 'product':
+				return function_exists( 'wc_get_page_id' ) ? $latest( 'product' ) : '';
+
+			case 'product_archive':
+				return $wc_page( 'shop' );
+
+			case 'cart':
+			case 'checkout':
+				return $wc_page( $context );
+
+			case 'account':
+				return $wc_page( 'myaccount' );
+
+			case 'post':
+				return $latest( 'post' );
+
+			case 'blog':
+				$posts_page = 'page' === get_option( 'show_on_front' ) ? (int) get_option( 'page_for_posts' ) : 0;
+
+				if ( 'page' === get_option( 'show_on_front' ) ) {
+					return $posts_page ? (string) get_permalink( $posts_page ) : '';
+				}
+
+				return home_url( '/' );
+
+			case 'portfolio':
+				return post_type_exists( 'portfolio' ) ? $latest( 'portfolio' ) : '';
+
+			case 'portfolio_archive':
+				return post_type_exists( 'portfolio' ) ? (string) get_post_type_archive_link( 'portfolio' ) : '';
+		}
+
+		return '';
+	}
+
+	/**
+	 * The kinds of page the preview is showing, matched against get_section_targets().
+	 *
+	 * @return array
+	 */
+	private function get_page_contexts() {
+		$contexts = array();
+		$wc       = function_exists( 'is_woocommerce' );
+
+		if ( $wc && is_product() ) {
+			$contexts[] = 'product';
+		}
+
+		if ( $wc && ( is_shop() || is_product_taxonomy() ) ) {
+			$contexts[] = 'product_archive';
+		}
+
+		if ( $wc && is_cart() ) {
+			$contexts[] = 'cart';
+		}
+
+		if ( $wc && is_checkout() ) {
+			$contexts[] = 'checkout';
+		}
+
+		if ( $wc && is_account_page() ) {
+			$contexts[] = 'account';
+		}
+
+		if ( is_singular( 'post' ) ) {
+			$contexts[] = 'post';
+		}
+
+		if ( is_home() || is_category() || is_tag() || is_author() || is_date() ) {
+			$contexts[] = 'blog';
+		}
+
+		if ( is_singular( 'portfolio' ) ) {
+			$contexts[] = 'portfolio';
+		}
+
+		if ( is_post_type_archive( 'portfolio' ) || is_tax( 'project-cat' ) ) {
+			$contexts[] = 'portfolio_archive';
+		}
+
+		return $contexts;
+	}
+
+	/**
 	 * Keep the preview a picture of the page: no admin bar, no edit mode.
 	 *
 	 * @param bool $show Whether to show the admin bar.
@@ -657,7 +826,8 @@ class WDEM_Live_Settings {
 				'param' => self::PREVIEW_VAR,
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				'value' => sanitize_text_field( wp_unslash( $_GET[ self::PREVIEW_VAR ] ) ),
-				'admin' => admin_url(),
+				'admin'    => admin_url(),
+				'contexts' => $this->get_page_contexts(),
 			)
 		);
 	}

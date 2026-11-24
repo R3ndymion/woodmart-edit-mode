@@ -49,6 +49,11 @@ keep the preview, so you can walk to another page and keep editing.
   differ from what is saved; they go through the theme's own `sanitize_before_save()` and
   into `wdem_live_{user ID}`. A preview request carries a nonce (`?wdem-live=`), and only
   for that request does the `xts-woodmart-options` option read from the transient.
+- **The preview goes where the section is about.** Opening a section of Single product takes
+  the preview to the latest product, Product archive to the shop page, Blog archive to the
+  posts page, Single post to the latest post — and likewise for the portfolio, the cart, the
+  checkout and My account. A preview already on such a page stays there, so a product picked
+  by hand is the one edited. Filter: `wdem_live_section_targets`.
 - **Colours and sizes don't reload.** An option with CSS selectors only changes the theme
   settings stylesheet, so the preview swaps that stylesheet in place. Anything else reloads
   the preview, keeping its scroll position.

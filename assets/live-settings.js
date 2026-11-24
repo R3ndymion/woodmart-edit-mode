@@ -13,6 +13,37 @@
 	var saving = false;
 	var pending = 0;
 	var restoreScroll = null;
+	var previewContexts = null;
+	var pendingSection = null;
+
+	// A section about a kind of page the preview is not showing — Single product while it shows
+	// the home page — takes the preview to such a page. A preview already showing one stays put,
+	// so a product picked by hand is the product the section is edited on.
+	function followSection(id) {
+		var target = config.sections && config.sections[id];
+
+		if (!target) {
+			return;
+		}
+
+		if (null === previewContexts) {
+			pendingSection = id;
+			return;
+		}
+
+		if (-1 !== previewContexts.indexOf(target.context)) {
+			return;
+		}
+
+		var url = new URL(target.url);
+
+		url.searchParams.set(config.previewVar, new URL(config.previewUrl).searchParams.get(config.previewVar));
+
+		previewContexts = null;
+		restoreScroll = null;
+		busy(1);
+		previewFrame.src = url.toString();
+	}
 
 	function setState(key) {
 		state.textContent = state.getAttribute('data-' + key);
@@ -152,6 +183,23 @@
 
 			case 'failed':
 				busy(-1);
+				break;
+
+			case 'section':
+				followSection(data.id);
+				break;
+
+			// A preview page loaded and said what it shows. A section opened before it knew waits
+			// for this; otherwise moving around the site by hand is left alone.
+			case 'preview':
+				previewContexts = Array.isArray(data.contexts) ? data.contexts : [];
+
+				if (null !== pendingSection) {
+					var id = pendingSection;
+
+					pendingSection = null;
+					followSection(id);
+				}
 				break;
 
 			// The settings page came back from its own submit: the values are in the database now,

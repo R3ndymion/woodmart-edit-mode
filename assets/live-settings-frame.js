@@ -406,6 +406,7 @@
 		if ('section' === view) {
 			updateCrumbs();
 			window.scrollTo(0, 0);
+			post({ wdemLive: 'section', id: activeSectionId() });
 
 			return;
 		}
@@ -425,6 +426,7 @@
 
 		if (document.body.classList.contains('wdem-view-section')) {
 			updateCrumbs();
+			post({ wdemLive: 'section', id: activeSectionId() });
 		}
 
 		// A group opens in place; a section opens its fields. The theme announces every switch with

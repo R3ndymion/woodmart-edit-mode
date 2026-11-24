@@ -34,7 +34,8 @@ It recognises:
 current page, like the customizer: changes show in the preview straight away, and
 nothing reaches visitors until you press Save. Colours and sizes update without a reload,
 the preview can be switched to tablet and mobile width, and links inside it stay in
-preview.
+preview. Opening a section about a kind of page — Single product, Product archive, Blog
+archive, Single post — takes the preview to such a page.
 
 Hovering always resolves to the innermost thing. An HTML block inside a layout
 offers the block, not the layout. Dropdowns are held open while highlighted, so a
