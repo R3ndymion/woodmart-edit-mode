@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Every tag, for the link to the changes since the previous release.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -42,8 +45,46 @@ jobs:
           rsync -a --exclude-from=.distignore ./ build/woodmart-edit-mode/
           cd build && zip -rqX "../woodmart-edit-mode-${GITHUB_REF_NAME#v}.zip" woodmart-edit-mode
 
+      # The release text is the version's entry in the readme.txt changelog, so the changelog is
+      # written once. A tag with no entry fails here rather than publishing an empty release.
+      - name: Write the release notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          zip="woodmart-edit-mode-${version}.zip"
+
+          awk -v v="$version" '
+            $0 == "= " v " =" { found = 1; next }
+            found && /^= .* =$/ { exit }
+            found && /^\* / { sub(/^\* /, "- "); print }
+          ' readme.txt > changes.md
+
+          if [ ! -s changes.md ]; then
+            echo "readme.txt has no changelog entry for $version" >&2
+            exit 1
+          fi
+
+          previous=$(git tag --list 'v*' --sort=v:refname | awk -v t="$GITHUB_REF_NAME" '$0 == t { print p; exit } { p = $0 }')
+
+          {
+            echo "## What's new"
+            echo
+            cat changes.md
+            echo
+            echo "## Install"
+            echo
+            echo "Download \`${zip}\` below and upload it in **Plugins → Add New → Upload Plugin**. To update, upload it over the installed version."
+            echo
+            echo "Requires the WoodMart theme and PHP $(grep -m1 '^Requires PHP:' readme.txt | awk '{print $3}') or later."
+            if [ -n "$previous" ]; then
+              echo
+              echo "**Full changelog:** https://github.com/${GITHUB_REPOSITORY}/compare/${previous}...${GITHUB_REF_NAME}"
+            fi
+          } > release-notes.md
+
+          cat release-notes.md
+
       - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
           files: woodmart-edit-mode-*.zip
-          generate_release_notes: true
+          body_path: release-notes.md
