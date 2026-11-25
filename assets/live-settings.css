@@ -217,6 +217,18 @@ body {
 		box-shadow: 0 0 0 1px var(--wdem-border), 0 8px 24px rgba(0, 0, 0, .08);
 	}
 
+	/* The next page, loading behind the one on screen. Same size and place, so it scrolls the
+	   same, but neither seen nor clickable until it takes over. */
+	iframe.wdem-live-buffer {
+		position: absolute;
+		top: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		visibility: hidden;
+		pointer-events: none;
+		transition: none;
+	}
+
 	&[data-device="tablet"] iframe {
 		width: 820px;
 	}

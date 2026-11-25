@@ -161,6 +161,13 @@ async function frameSuite() {
 	await sleep(400);
 	check('and the next move without a button lets go', JSON.stringify(requests[requests.length - 1]['xts-woodmart-options[primary-color][idle]']), '["#444444"]');
 
+	// A picked value is final: it goes out without waiting for a pause the way typing does.
+	const sentBeforePick = requests.length;
+	color.value = '#555555';
+	color.dispatchEvent(new window.Event('change', { bubbles: true }));
+	await sleep(120);
+	check('a picked value goes at once', requests.length, sentBeforePick + 1);
+
 	// Back to the colour the rest of the suite expects.
 	color.value = '#e0245e';
 	color.dispatchEvent(new window.Event('change', { bubbles: true }));

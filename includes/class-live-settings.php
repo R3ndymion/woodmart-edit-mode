@@ -555,8 +555,9 @@ class WDEM_Live_Settings {
 	 * Every option id the theme registers, with whether a change to it only changes the CSS.
 	 *
 	 * A field with selectors writes its value into the theme settings stylesheet and nothing else, so
-	 * the preview can swap the stylesheet instead of reloading. Typography is the exception: a new
-	 * family needs a font link the stylesheet does not carry.
+	 * the preview can swap the stylesheet instead of reloading. So does a field of a group whose
+	 * selectors carry its value as a placeholder, and the few options the theme turns into CSS by
+	 * hand. Typography counts too: the swapped stylesheet brings the fonts it needs along.
 	 *
 	 * @return array Option id => bool.
 	 */
@@ -564,18 +565,58 @@ class WDEM_Live_Settings {
 		$registry = array();
 
 		foreach ( \XTS\Admin\Modules\Options::get_fields() as $field ) {
-			$list = array( $field );
-
-			if ( ! empty( $field->inner_fields ) ) {
-				$list = array_merge( $list, $field->inner_fields );
+			if ( empty( $field->args['id'] ) ) {
+				continue;
 			}
 
-			foreach ( $list as $item ) {
+			$registry[ $field->args['id'] ] = $this->is_css_only( $field->args );
+
+			if ( empty( $field->inner_fields ) ) {
+				continue;
+			}
+
+			$group_css = $this->has_css( $field->args ) ? wp_json_encode( $this->css_args( $field->args ) ) : '';
+
+			foreach ( $field->inner_fields as $item ) {
 				if ( empty( $item->args['id'] ) ) {
 					continue;
 				}
 
-				$registry[ $item->args['id'] ] = ! empty( $item->args['selectors'] ) && 'typography' !== $item->args['type'] && 'group' !== $item->args['type'];
+				$registry[ $item->args['id'] ] = $this->is_css_only( $item->args ) || ( $group_css && false !== strpos( $group_css, '{{' . strtoupper( $item->args['id'] ) . '}}' ) );
+			}
+		}
+
+		/**
+		 * Options whose only effect on the front end is the theme settings stylesheet, built by hand
+		 * rather than from field selectors.
+		 *
+		 * @param string[] $ids Option ids.
+		 */
+		$by_hand = apply_filters(
+			'wdem_live_css_only_fields',
+			array(
+				'site_custom_width',
+				'btns_default_style',
+				'btns_default_color_scheme',
+				'btns_default_color_scheme_hover',
+				'btns_shop_style',
+				'btns_shop_color_scheme',
+				'btns_shop_color_scheme_hover',
+				'rounding_size',
+				'categories_rounding',
+				'multi_custom_fonts',
+				'custom_css',
+				'css_desktop',
+				'css_tablet',
+				'css_wide_mobile',
+				'css_mobile',
+				'css_backend',
+			)
+		);
+
+		foreach ( (array) $by_hand as $id ) {
+			if ( isset( $registry[ $id ] ) ) {
+				$registry[ $id ] = true;
 			}
 		}
 
@@ -780,6 +821,48 @@ class WDEM_Live_Settings {
 	}
 
 	/**
+	 * Whether a field's value goes into the theme settings stylesheet and nowhere else.
+	 *
+	 * The theme's controls write CSS through any of several arguments: plain selectors, a CSS
+	 * variable on :root (colours), hover and background variants, or rules of their own. A field
+	 * with one of them is styling. Typography always is: its fonts ride along with the stylesheet
+	 * of the preview (see get_fonts_import()). A group has no value of its own, only its fields.
+	 *
+	 * @param array $args Field arguments.
+	 *
+	 * @return bool
+	 */
+	private function is_css_only( $args ) {
+		if ( 'group' === $args['type'] ) {
+			return false;
+		}
+
+		return 'typography' === $args['type'] || $this->has_css( $args );
+	}
+
+	/**
+	 * The arguments through which a field writes CSS.
+	 *
+	 * @param array $args Field arguments.
+	 *
+	 * @return array
+	 */
+	private function css_args( $args ) {
+		return array_filter( array_intersect_key( $args, array_flip( array( 'selectors', 'selector', 'selector_var', 'selector_hover', 'selector_hover_var', 'selector_bg', 'css_rules' ) ) ) );
+	}
+
+	/**
+	 * Whether a field writes CSS of its own.
+	 *
+	 * @param array $args Field arguments.
+	 *
+	 * @return bool
+	 */
+	private function has_css( $args ) {
+		return (bool) $this->css_args( $args );
+	}
+
+	/**
 	 * Keep the preview a picture of the page: no admin bar, no edit mode.
 	 *
 	 * @param bool $show Whether to show the admin bar.
@@ -862,9 +945,49 @@ class WDEM_Live_Settings {
 		nocache_headers();
 		header( 'Content-Type: text/css; charset=' . get_option( 'blog_charset' ) );
 
-		echo $this->get_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The theme's own CSS.
+		echo $this->get_fonts_import() . $this->get_css(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The theme's own CSS.
 
 		exit;
+	}
+
+	/**
+	 * The Google fonts the unsaved typography needs, as an import at the head of the stylesheet.
+	 *
+	 * A page loaded in the preview gets its fonts from the theme, which reads the unsaved values like
+	 * everything else. A stylesheet swapped into a page already loaded has to bring a newly picked
+	 * family with it. The theme decides which fonts that takes — the ones it keeps locally are left
+	 * out — and hands the address to WordPress; it is read back from there.
+	 *
+	 * @return string
+	 */
+	private function get_fonts_import() {
+		$fonts = '\XTS\Admin\Modules\Options\Google_Fonts\Google_Fonts';
+
+		if ( ! class_exists( $fonts ) || ! method_exists( $fonts, 'get_instance' ) ) {
+			return '';
+		}
+
+		foreach ( \XTS\Admin\Modules\Options::get_fields() as $field ) {
+			if ( 'typography' === $field->args['type'] && method_exists( $field, 'add_google_fonts' ) ) {
+				$field->add_google_fonts();
+			}
+		}
+
+		$instance = $fonts::get_instance();
+
+		if ( ! method_exists( $instance, 'enqueue_from_cdn' ) ) {
+			return '';
+		}
+
+		$instance->enqueue_from_cdn();
+
+		$style = wp_styles()->query( 'xts-google-fonts' );
+
+		if ( ! $style || empty( $style->src ) ) {
+			return '';
+		}
+
+		return '@import url("' . esc_url_raw( $style->src ) . '");' . "\n";
 	}
 
 	/**

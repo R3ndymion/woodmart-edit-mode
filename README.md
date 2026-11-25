@@ -54,9 +54,12 @@ keep the preview, so you can walk to another page and keep editing.
   posts page, Single post to the latest post — and likewise for the portfolio, the cart, the
   checkout and My account. A preview already on such a page stays there, so a product picked
   by hand is the one edited. Filter: `wdem_live_section_targets`.
-- **Colours and sizes don't reload.** An option with CSS selectors only changes the theme
-  settings stylesheet, so the preview swaps that stylesheet in place. Anything else reloads
-  the preview, keeping its scroll position.
+- **Colours, sizes and fonts don't reload.** An option that only changes the theme settings
+  stylesheet — selectors, colour variables, typography, button styles, rounding, custom CSS —
+  is applied by swapping that stylesheet in place; a newly picked Google font comes along with
+  it. Anything else reloads the preview, keeping its scroll position.
+- **Controls fit the panel.** The theme's controls are laid out for a narrow column: one per
+  row, inputs as wide as the panel, a tighter rhythm, and no screenshot tooltips.
 - **Nothing leaks.** The theme rebuilds its cached stylesheet on the front end when the
   cache is missing; inside a preview every write to `xts-woodmart-options` and
   `xts-theme_settings_*` is refused, so unsaved values never reach visitors.

@@ -12,7 +12,10 @@
 	var PREFIX = settings.option + '[';
 	var SAVING_KEY = 'wdem_live_saving';
 	var POLL = 600;
+	// Typing waits for a pause; a value picked — a select, a button, a colour let go of — is final
+	// and goes out at once, after the theme's own handlers have written it into the form.
 	var DEBOUNCE = 250;
+	var SETTLE = 40;
 
 	var form = null;
 	var initial = null;
@@ -142,12 +145,12 @@
 		}, true);
 	}
 
-	function schedule() {
+	function schedule(event) {
 		if (null !== timer) {
 			window.clearTimeout(timer);
 		}
 
-		timer = window.setTimeout(check, DEBOUNCE);
+		timer = window.setTimeout(check, event && 'input' === event.type ? DEBOUNCE : SETTLE);
 	}
 
 	function send(changed, signature) {
@@ -444,8 +447,11 @@
 		}, true);
 
 		function onSectionChanged() {
+			// The group opens in place on the list, but its first section is now the active one,
+			// so the preview still goes to the page that section is about.
 			if (groupClicked) {
 				groupClicked = false;
+				post({ wdemLive: 'section', id: activeSectionId() });
 				return;
 			}
 

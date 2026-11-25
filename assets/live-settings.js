@@ -12,7 +12,7 @@
 	var unsaved = false;
 	var saving = false;
 	var pending = 0;
-	var restoreScroll = null;
+	var loader = null;
 	var previewContexts = null;
 	var pendingSection = null;
 
@@ -40,9 +40,7 @@
 		url.searchParams.set(config.previewVar, new URL(config.previewUrl).searchParams.get(config.previewVar));
 
 		previewContexts = null;
-		restoreScroll = null;
-		busy(1);
-		previewFrame.src = url.toString();
+		loadPreview(url.toString(), 0);
 	}
 
 	function setState(key) {
@@ -86,16 +84,99 @@
 	}
 
 	function reloadPreview() {
-		var win = previewFrame.contentWindow;
+		var scroll = 0;
 
 		try {
-			restoreScroll = win ? win.scrollY : null;
+			scroll = previewFrame.contentWindow.scrollY;
 		} catch (e) {
-			restoreScroll = null;
+			scroll = 0;
 		}
 
+		loadPreview(currentPreviewUrl().toString(), scroll);
+	}
+
+	// The next page loads in a second frame behind the one on screen, is scrolled to where the
+	// visitor was, and only then takes its place — the way the customizer does it. Reloading the
+	// frame on screen would show the top of the page while it loads and jump down after.
+	function loadPreview(url, scroll) {
+		if (loader) {
+			loader.cancel();
+		}
+
+		var next = document.createElement('iframe');
+		var done = false;
+		var timer = null;
+
+		next.className = previewFrame.className + ' wdem-live-buffer';
+		next.title = previewFrame.title;
+
+		function finish() {
+			if (done) {
+				return;
+			}
+
+			done = true;
+			window.clearTimeout(timer);
+			loader = null;
+
+			next.classList.remove('wdem-live-buffer');
+			previewFrame.parentNode.removeChild(previewFrame);
+			previewFrame = next;
+			busy(-1);
+		}
+
+		// The page may still be growing — images, fonts, carousels — so the scroll is tried
+		// until it holds or the page has had its chance.
+		function settle(started) {
+			if (done) {
+				return;
+			}
+
+			var win;
+
+			try {
+				win = next.contentWindow;
+				win.scrollTo(0, scroll);
+			} catch (e) {
+				finish();
+				return;
+			}
+
+			if (Math.abs(win.scrollY - scroll) < 2 || Date.now() - started > 1500) {
+				// One more frame, so the scrolled page is painted before it is shown.
+				window.requestAnimationFrame(finish);
+				return;
+			}
+
+			window.requestAnimationFrame(function() {
+				settle(started);
+			});
+		}
+
+		next.addEventListener('load', function() {
+			settle(Date.now());
+		});
+
+		loader = {
+			cancel: function() {
+				if (done) {
+					return;
+				}
+
+				done = true;
+				window.clearTimeout(timer);
+				next.parentNode.removeChild(next);
+				loader = null;
+				busy(-1);
+			}
+		};
+
+		// A page that never finishes loading still gets shown in the end.
+		timer = window.setTimeout(finish, 20000);
+
 		busy(1);
-		previewFrame.src = currentPreviewUrl().toString();
+		previewFrame.parentNode.insertBefore(next, previewFrame.nextSibling);
+		next.src = url;
 	}
 
 	// Only the stylesheet changed, so only the stylesheet is replaced. No reload, no lost scroll.
@@ -139,21 +220,10 @@
 			});
 	}
 
+	// The first page loads in the frame on screen; there is nothing behind it to keep showing.
 	previewFrame.addEventListener('load', function() {
-		if (pending) {
-			busy(-1);
-		}
-
-		if (null !== restoreScroll) {
-			try {
-				previewFrame.contentWindow.scrollTo(0, restoreScroll);
-			} catch (e) {
-				// Nothing to restore into.
-			}
-
-			restoreScroll = null;
-		}
-	});
+		busy(-1);
+	}, { once: true });
 
 	window.addEventListener('message', function(event) {
 		if (event.origin !== window.location.origin || !event.data || 'object' !== typeof event.data || !event.data.wdemLive) {
