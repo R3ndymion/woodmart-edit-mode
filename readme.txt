@@ -86,6 +86,10 @@ present in the initial page response.
 
 = 1.1.0 =
 * Live settings: edit the theme settings next to a live preview of the page, the way the customizer works.
+* Live settings: colours, sizes, fonts and custom CSS apply without reloading the preview; other options reload it without losing the scroll position.
+* Live settings: opening a section such as Single product or Blog archive takes the preview to that kind of page.
+* Live settings: the theme's controls are laid out for the narrow panel, without screenshot tooltips.
+* The admin bar switch is now called "Live edit", with Live settings in its menu, and takes the accent colour of the admin colour scheme.
 * WoodMart 8.7 support: the Gutenberg header, site builder footers and page titles now link to their editor.
 * Sliders and their slides are recognised again on WoodMart 8.7, which no longer prints their edit links in the markup.
 * The header button is offered only to users who can open the header builder.
